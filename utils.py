@@ -145,8 +145,8 @@ def prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label
     We use run_type NR for skill prediction ( none of the labels revealed at test time)
     
     inputs:
-        trn_X_Y: csr matrix of labels for every jd
-        tst_X_Y: csr matrix of labels for every jd
+        trn_X_Y: csr matrix of jd v labels
+        tst_X_Y: csr matrix of jd v labels
         trn_point_features: train numpy embedding array 
         tst_point_features: test numpy embedding array
         labels_features: labels numpy embedding array
@@ -217,15 +217,15 @@ def prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label
 
     elif(args.run_type == "NR"):
         tst_X_Y_val = tst_X_Y
-        tst_X_Y_trn = lil_matrix(tst_X_Y_val.shape).tocsr()
-        valid_tst_point_features = tst_point_features
+        tst_X_Y_trn = lil_matrix(tst_X_Y_val.shape).tocsr()  # Made an empty csr matrix of the same shape as js v labels csr
+        valid_tst_point_features = tst_point_features  # numpy array copied
 
-        adj_list = [trn_X_Y.indices[trn_X_Y.indptr[i]: trn_X_Y.indptr[i + 1]]
-                    for i in range(len(trn_X_Y.indptr) - 1)]
+        adj_list = [trn_X_Y.indices[trn_X_Y.indptr[i]: trn_X_Y.indptr[i + 1]] 
+                    for i in range(len(trn_X_Y.indptr) - 1)]. # Adjecency list created. jd's -> labels
 
         trn_point_titles = trn_point_titles + tst_point_titles
 
-        label_remapping = remap_label_indices(trn_point_titles, label_titles)
+        label_remapping = remap_label_indices(trn_point_titles, label_titles) # There is no remapping in our case, we can comment this part
         adj_list = [[label_remapping[x] for x in subl] for subl in adj_list]
 
         temp = {v: k for k, v in label_remapping.items() if v >=
@@ -249,8 +249,9 @@ def prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label
         print("node_features.shape", node_features.shape)
 
         print("len(adj_list)", len(adj_list))
-
-        adjecency_lists = [[] for i in range(node_features.shape[0])]
+        
+        adjecency_lists = [[] for i in range(node_features.shape[0])] # Single list of lists for all nodes. labels -> JD and JD -> label.
+        
         for i, l in enumerate(adj_list):
             for x in l:
                 adjecency_lists[i].append(x)
@@ -258,9 +259,10 @@ def prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label
 
         tst_valid_inds = np.arange(tst_X_Y_val.shape[0])
 
-        NUM_TRN_POINTS = trn_point_features.shape[0]
+        NUM_TRN_POINTS = trn_point_features.shape[0] # Size of training data
 
-    if(args.restrict_edges_num >= 3):
+    if(args.restrict_edges_num >= 3): # if number of neighbours are restricted take frequent labels (args.restrict_edges_head_threshold) in datset and change adjecency lists to reflect
+                                      # the neighbour pruning.
         head_labels = np.where(
             np.sum(
                 trn_X_Y.astype(
