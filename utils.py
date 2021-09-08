@@ -141,6 +141,20 @@ def sample_anns_nbrs(label_features, tst_point_features, num_nbrs=4):
 
 def prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label_features,
                  trn_point_titles, tst_point_titles, label_titles, args):
+    """
+    We use run_type NR for skill prediction ( none of the labels revealed at test time)
+    
+    inputs:
+        trn_X_Y: csr matrix of labels for every jd
+        tst_X_Y: csr matrix of labels for every jd
+        trn_point_features: train numpy embedding array 
+        tst_point_features: test numpy embedding array
+        labels_features: labels numpy embedding array
+        trn_point_titles: train set jd  
+        tst_point_titles: test set jd
+        label_titles: all labels text 
+    """
+    
     if(args.run_type == "PR"):
         tst_valid_inds = np.where(
             tst_X_Y.indptr[1:] - tst_X_Y.indptr[:-1] > 1)[0]
