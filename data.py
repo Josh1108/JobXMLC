@@ -99,16 +99,17 @@ class GraphCollator():
             all_labels_pos = [b[1] for b in batch]
             # hard_neg = np.array([b[2][:self.num_hard_neg] for b in batch], dtype=np.int64)
             label_ids = np.zeros((self.num_labels, ), dtype=np.bool)
-
+            
             label_ids[[x for subl in all_labels_pos for x in subl]] = 1
             label_ids[[x for b in batch for x in b[2]]] = 1
             # label_ids[np.ravel(hard_neg)] = 1
-
+            # print(len(np.where(label_ids == 0)[0]))
             random_neg = np.random.choice(
                 np.where(
                     label_ids == 0)[0],
                 self.num_random,
                 replace=False)
+            # print(len(label_ids))
             label_ids[random_neg] = 1
 
             label_map = {

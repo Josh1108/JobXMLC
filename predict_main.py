@@ -104,12 +104,19 @@ def run_validation(val_predicted_labels, tst_X_Y_val,
         (data, indices, indptr), shape=(
             val_predicted_labels.shape))
 
-    print(tst_X_Y_val.shape, _pred.shape)
+
+    print()
     acc = xc_metrics.Metrics(tst_X_Y_val, inv_psp=inv_prop)
     acc = acc.eval(_pred, 5)
-    _recall = recall(tst_X_Y_val, _pred, 100)
-    return (acc, _recall), _pred
-
+    recall_lis =[]
+    prec_lis =[]
+    for num in [5,10,20,30,50,100]:
+        _rec = recall(tst_X_Y_val, _pred, num)
+        recall_lis.append(_rec)
+        _prec = precision(tst_X_Y_val,_pred,num)
+        prec_lis.append(_prec)
+    
+    return (acc, recall_lis,prec_lis), _pred
 
 def encode_nodes(net, context):
     net.eval()

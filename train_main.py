@@ -18,6 +18,7 @@ import sys
 import argparse
 import warnings
 import logging
+import json
 from scipy.spatial import distance
 from scipy.sparse import csr_matrix, lil_matrix, load_npz, hstack, vstack, save_npz
 
@@ -30,6 +31,8 @@ from network import *
 from data import *
 from predict_main import *
 from utils import *
+
+
 
 torch.manual_seed(22)
 torch.cuda.manual_seed_all(22)
@@ -290,18 +293,37 @@ if __name__ == "__main__":
         type=float,
         help='param B for inv prop calculation')
 
-    # args = parser.parse_args()
+   #============ LOADING CONFIG FILES ============================
     args, _ = parser.parse_known_args()
-    print("***args=", args)
+
+    with open('commandline_args.txt', 'r') as f:
+        args.__dict__ = json.load(f)
 
     DATASET = args.dataset
     NUM_PARTITIONS = len(args.devices.strip().split(","))
+
+
+    #================LOGGING DETAILS ==========================
+
     EMB_TYPE = args.embedding_type
     RUN_TYPE = args.run_type
     TST_TAKE = args.num_validation
     NUM_TRN_POINTS = -1
 
-    #########################   Data load   #########################
+    for handler in logging.root.handlers[:]:
+        logging.root.removeHandler(handler)
+    logging.basicConfig(format='%(asctime)s - %(message)s',
+        filename="{}/GraphXMLBERT_log_{}.txt".format(DATASET, RUN_TYPE), level=logging.INFO)
+
+    logging.info("================= STARTING NEW RUN =====================")
+    logging.info(" ARGUMENTS ")
+    for arg, value in sorted(vars(args).items()):
+        logging.info("Argument %s: %r", arg, value)
+    logging.info("=======NUM_PARTITIONS ( GPU's)==================",NUM_PARTITIONS)
+
+
+    #===========================   Data load   ===========================
+
     trn_point_titles = [
         line.strip() for line in open(
             "{}/trn_X.txt".format(DATASET),
@@ -333,9 +355,9 @@ if __name__ == "__main__":
         label_features.shape)
 
     trn_X_Y = data_utils.read_sparse_file(
-        "{}/trn_X_Y.txt".format(DATASET), force_header=True)
+        "{}/trn_X_Y.txt".format(DATASET),force_header =True)
     tst_X_Y = data_utils.read_sparse_file(
-        "{}/tst_X_Y.txt".format(DATASET), force_header=True)
+        "{}/tst_X_Y.txt".format(DATASET),force_header=True)
 
     tst_valid_inds, trn_X_Y, tst_X_Y_trn, tst_X_Y_val, node_features, valid_tst_point_features, label_remapping, adjecency_lists, NUM_TRN_POINTS = prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label_features,
                                                                                                                                                                 trn_point_titles, tst_point_titles, label_titles, args)
@@ -362,10 +384,14 @@ if __name__ == "__main__":
             tst_valid_inds[i],
             []) for i in range(
             len(tst_valid_inds))}
-    print("len(tst_exact_remove)", len(tst_exact_remove))
+    logger.info("len(tst_exact_remove)", len(tst_exact_remove))
 
-    print("node_features.shape, len(adjecency_lists)",
+    logger.info("node_features.shape, len(adjecency_lists)",
           node_features.shape, len(adjecency_lists))
+
+    #======= DEFINING GRAPH ==============
+
+
     graph = Graph(node_features, adjecency_lists, args.random_shuffle_nbrs)
 
     params = create_params_dict(
@@ -376,6 +402,7 @@ if __name__ == "__main__":
         NUM_PARTITIONS,
         NUM_TRN_POINTS)
     print("***params=", params)
+    
 
     #########################   M1/Phase1 Training(with random negatives)   ##
     head_net = GalaXCBase(params["num_labels"], params["hidden_dims"], params["devices"],
@@ -397,10 +424,7 @@ if __name__ == "__main__":
     val_data = create_validation_data(valid_tst_point_features, label_features, tst_X_Y_val,
                                       args, params, TST_TAKE, NUM_PARTITIONS)
 
-    for handler in logging.root.handlers[:]:
-        logging.root.removeHandler(handler)
-    logging.basicConfig(
-        filename="{}/GraphXML_log_{}.txt".format(DATASET, RUN_TYPE), level=logging.INFO)
+
 
     # training loop
     warnings.simplefilter('ignore')

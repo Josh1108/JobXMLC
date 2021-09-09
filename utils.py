@@ -53,9 +53,15 @@ def make_csr_from_ll(ll, num_z):
     return csr_matrix((data, indices, indptr), shape=(len(ll), num_z))
 
 
-@nb.njit(cache=True)
+# @nb.njit(cache=True)
 def _recall(true_labels_indices, true_labels_indptr,
             pred_labels_data, pred_labels_indices, pred_labels_indptr, k):
+    skill_list =[]
+    with open('../data/COLING/Y.txt','r') as f:
+        lines = f.readlines()
+        skill_list = [line.rstrip() for line in lines]
+    print(skill_list[0])
+        
     fracs = []
     for i in range(len(true_labels_indptr) - 1):
         _true_labels = true_labels_indices[true_labels_indptr[i]: true_labels_indptr[i + 1]]
@@ -63,11 +69,35 @@ def _recall(true_labels_indices, true_labels_indptr,
         _indices = pred_labels_indices[pred_labels_indptr[i]: pred_labels_indptr[i + 1]]
         top_inds = np.argsort(_data)[::-1][:k]
         _pred_labels = _indices[top_inds]
+        to_print_pred = [skill_list[x-1] for x in _pred_labels]
+        to_print_true =[skill_list[x-1] for x in _true_labels]
+
+        with open('../data/COLING/predictions_{}'.format(k),'a') as f:
+            f.write(str(to_print_pred)+'\t'+str(to_print_true))
+            f.write('\n')
         if(len(_true_labels) > 0):
             fracs.append(len(set(_pred_labels).intersection(
                 set(_true_labels))) / len(_true_labels))
     return np.mean(np.array(fracs, dtype=np.float32))
+def _precision(true_labels_indices, true_labels_indptr,
+            pred_labels_data, pred_labels_indices, pred_labels_indptr, k):
+    fracs =[]        
+    for i in range(len(true_labels_indptr) - 1):
+        _true_labels = true_labels_indices[true_labels_indptr[i]: true_labels_indptr[i + 1]]
+        _data = pred_labels_data[pred_labels_indptr[i]: pred_labels_indptr[i + 1]]
+        _indices = pred_labels_indices[pred_labels_indptr[i]: pred_labels_indptr[i + 1]]
+        top_inds = np.argsort(_data)[::-1][:k]
+        _pred_labels = _indices[top_inds]
 
+    
+    if(len(_pred_labels) > 0):
+            fracs.append(len(set(_pred_labels).intersection(
+                set(_true_labels))) / len(_pred_labels))
+    return np.mean(np.array(fracs, dtype=np.float32))
+
+def precision(true_labels,pred_labels,k):
+    return _precision(true_labels.indices.astype(np.int64), true_labels.indptr,
+                   pred_labels.data, pred_labels.indices.astype(np.int64), pred_labels.indptr, k)
 
 def recall(true_labels, pred_labels, k):
     return _recall(true_labels.indices.astype(np.int64), true_labels.indptr,
@@ -216,7 +246,7 @@ def prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label
 
         temp = {v: k for k, v in label_remapping.items() if v >=
                 len(trn_point_titles)}
-        print("len(label_remapping), len(temp), len(trn_point_titles)",
+        logger.info("len(label_remapping), len(temp), len(trn_point_titles)",
               len(label_remapping), len(temp), len(trn_point_titles))
 
         new_label_indices = sorted(list(temp.keys()))
@@ -227,14 +257,12 @@ def prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label
             trn_point_features.shape,
             valid_tst_point_features.shape,
             new_label_features.shape]
-        print("lengths, sum([x[0] for x in lengths])",
-              lengths, sum([x[0] for x in lengths]))
 
         node_features = np.vstack(
             [trn_point_features, valid_tst_point_features, new_label_features])
-        print("node_features.shape", node_features.shape)
+        logger.info("node_features.shape", node_features.shape)
 
-        print("len(adj_list)", len(adj_list))
+        logger.info("len(adj_list)", len(adj_list))
 
         adjecency_lists = [[] for i in range(node_features.shape[0])]
         for i, l in enumerate(adj_list):
@@ -245,7 +273,8 @@ def prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label
         tst_valid_inds = np.arange(tst_X_Y_val.shape[0])
 
         NUM_TRN_POINTS = trn_point_features.shape[0]
-
+        logging.info("NUMBER OF TRAINING DATA",NUM_TRN_POINTS)
+        
     if(args.restrict_edges_num >= 3):
         head_labels = np.where(
             np.sum(
