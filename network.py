@@ -10,7 +10,7 @@ import torch.nn as nn
 from torch.nn.parameter import Parameter
 import torch.nn.functional as F
 import torch.utils.data
-
+import logging
 
 class MeanAggregator(nn.Module):
     """Aggregates a node's embeddings using mean of neighbors' embeddings."""
@@ -243,7 +243,7 @@ class GINEncoder(nn.Module):
         context = {}
         neigh_nodes = graph.sample_neighbors(nodes, self.num_sample)[
             0
-        ].flatten()
+        ].flatten() # We get sampled nodes. Repeat nodes if number of nodes<sample
 
         context["node_feats"] = self.query_func(
             nodes, graph

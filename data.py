@@ -15,8 +15,8 @@ import sys
 from scipy.sparse import csr_matrix, lil_matrix, load_npz, hstack, vstack
 
 from torch.utils.data import IterableDataset, DataLoader
-
-
+import logging
+logger = logging.getLogger("main_logger")
 class Graph():
     def __init__(self, feat_data, adj_lists, random_shuffle_nbrs):
         self.feat_data = feat_data
@@ -33,7 +33,7 @@ class Graph():
     ) -> (np.array, np.array, np.array, np.array):
         res = np.empty((len(nodes), count), dtype=np.int64)
         for i in range(len(nodes)):
-            universe = np.array(self.adj_lists[nodes[i]], dtype=np.int64)
+            universe = np.array(self.adj_lists[nodes[i]], dtype=np.int64) 
 
             if(self.random_shuffle_nbrs == 1):
                 np.random.shuffle(universe)
@@ -64,7 +64,7 @@ class DatasetGraph(torch.utils.data.Dataset):
         self.hard_negs = [list(set(hard_negs[i]) - set(self.res_dict[i]))
                           for i in range(self.X_Y.shape[0])]
 
-        print(
+        logger.info(
             "Shape of X_Y = ", self.X_Y.shape, len(
                 self.res_dict), len(
                 hard_negs[1]), len(

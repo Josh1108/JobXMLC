@@ -170,7 +170,7 @@ def sample_anns_nbrs(label_features, tst_point_features, num_nbrs=4):
 
 
 def prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label_features,
-                 trn_point_titles, tst_point_titles, label_titles, args):
+                 trn_point_titles, tst_point_titles, label_titles, args,logging):
     """
     We use run_type NR for skill prediction ( none of the labels revealed at test time)
     
@@ -251,7 +251,7 @@ def prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label
         valid_tst_point_features = tst_point_features  # numpy array copied
 
         adj_list = [trn_X_Y.indices[trn_X_Y.indptr[i]: trn_X_Y.indptr[i + 1]] 
-                    for i in range(len(trn_X_Y.indptr) - 1)]. # Adjecency list created. jd's -> labels
+                    for i in range(len(trn_X_Y.indptr) - 1)]        # Adjecency list created. jd's -> labels
 
         trn_point_titles = trn_point_titles + tst_point_titles
 
@@ -260,7 +260,7 @@ def prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label
 
         temp = {v: k for k, v in label_remapping.items() if v >=
                 len(trn_point_titles)}
-        logger.info("len(label_remapping), len(temp), len(trn_point_titles)",
+        logging.info("len(label_remapping), len(temp), len(trn_point_titles)",
               len(label_remapping), len(temp), len(trn_point_titles))
 
         new_label_indices = sorted(list(temp.keys()))
@@ -274,9 +274,9 @@ def prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label
 
         node_features = np.vstack(
             [trn_point_features, valid_tst_point_features, new_label_features])
-        logger.info("node_features.shape", node_features.shape)
+        logging.info("node_features.shape", node_features.shape)
 
-        logger.info("len(adj_list)", len(adj_list))
+        logging.info("len(adj_list)", len(adj_list))
         
         adjecency_lists = [[] for i in range(node_features.shape[0])] # Single list of lists for all nodes. labels -> JD and JD -> label.
         
@@ -296,7 +296,7 @@ def prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label
                 trn_X_Y.astype(
                     np.bool),
                 axis=0) > args.restrict_edges_head_threshold)[0]
-        print(
+        logging.info(
             "Restricting edges: Number of head labels = {}".format(
                 len(head_labels)))
 

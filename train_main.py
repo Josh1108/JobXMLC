@@ -116,7 +116,7 @@ def train():
                 mean_loss,
                 epoch_train_end_time -
                 epoch_train_start_time))
-        logging.info(
+        logger.info(
             "Epoch: {}, loss: {}, time: {} sec".format(
                 epoch,
                 mean_loss,
@@ -156,7 +156,7 @@ def train():
             acc, _ = run_validation(val_predicted_labels.tocsr(
             ), val_data["val_labels"], tst_exact_remove, tst_X_Y_trn, inv_prop)
             print("acc = {}".format(acc))
-            logging.info("acc = {}".format(acc))
+            logger.info("acc = {}".format(acc))
 
 
 if __name__ == "__main__":
@@ -309,17 +309,16 @@ if __name__ == "__main__":
     RUN_TYPE = args.run_type
     TST_TAKE = args.num_validation
     NUM_TRN_POINTS = -1
-
-    for handler in logging.root.handlers[:]:
-        logging.root.removeHandler(handler)
     logging.basicConfig(format='%(asctime)s - %(message)s',
         filename="{}/GraphXMLBERT_log_{}.txt".format(DATASET, RUN_TYPE), level=logging.INFO)
+    logger = logging.getLogger("main_logger")
 
-    logging.info("================= STARTING NEW RUN =====================")
-    logging.info(" ARGUMENTS ")
+
+    logger.info("================= STARTING NEW RUN =====================")
+    logger.info(" ARGUMENTS ")
     for arg, value in sorted(vars(args).items()):
-        logging.info("Argument %s: %r", arg, value)
-    logging.info("=======NUM_PARTITIONS ( GPU's)==================",NUM_PARTITIONS)
+        logger.info("Argument %s: %r", arg, value)
+    logger.info("=======NUM_PARTITIONS ( GPU's)==================",NUM_PARTITIONS)
 
 
     #===========================   Data load   ===========================
@@ -360,7 +359,7 @@ if __name__ == "__main__":
         "{}/tst_X_Y.txt".format(DATASET),force_header=True)
 
     tst_valid_inds, trn_X_Y, tst_X_Y_trn, tst_X_Y_val, node_features, valid_tst_point_features, label_remapping, adjecency_lists, NUM_TRN_POINTS = prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label_features,
-                                                                                                                                                                trn_point_titles, tst_point_titles, label_titles, args)
+                                                                                                                                                                trn_point_titles, tst_point_titles, label_titles, args,logger)
 
     hard_negs = [[] for i in range(node_features.shape[0])]
 
@@ -389,7 +388,7 @@ if __name__ == "__main__":
     logger.info("node_features.shape, len(adjecency_lists)",
           node_features.shape, len(adjecency_lists))
 
-    #======= DEFINING GRAPH ==============
+    #====================== DEFINING GRAPH ==========================
 
 
     graph = Graph(node_features, adjecency_lists, args.random_shuffle_nbrs)
@@ -401,7 +400,7 @@ if __name__ == "__main__":
         graph,
         NUM_PARTITIONS,
         NUM_TRN_POINTS)
-    print("***params=", params)
+    logger.info("***params=", params)
     
 
     #########################   M1/Phase1 Training(with random negatives)   ##
@@ -430,11 +429,11 @@ if __name__ == "__main__":
     warnings.simplefilter('ignore')
 
     head_criterion = torch.nn.BCEWithLogitsLoss(reduction=params["reduction"])
-    print("Model parameters: ", params)
-    print("Model configuration: ", head_net)
+    logger.info("Model parameters: ", params)
+    logger.info("Model configuration: ", head_net)
 
-    head_train_dataset = DatasetGraph(trn_X_Y, hard_negs)
-    print('Dataset Loaded')
+    head_train_dataset = DatasetGraph(trn_X_Y, hard_negs) # Right now hard_negs are empty
+    logger.info('Dataset Loaded')
 
     hc = GraphCollator(
         head_net,
