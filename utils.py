@@ -79,6 +79,8 @@ def _recall(true_labels_indices, true_labels_indptr,
             fracs.append(len(set(_pred_labels).intersection(
                 set(_true_labels))) / len(_true_labels))
     return np.mean(np.array(fracs, dtype=np.float32))
+
+
 def _precision(true_labels_indices, true_labels_indptr,
             pred_labels_data, pred_labels_indices, pred_labels_indptr, k):
     fracs =[]        
@@ -90,7 +92,7 @@ def _precision(true_labels_indices, true_labels_indptr,
         _pred_labels = _indices[top_inds]
 
     
-    if(len(_pred_labels) > 0):
+        if(len(_pred_labels) > 0):
             fracs.append(len(set(_pred_labels).intersection(
                 set(_true_labels))) / len(_pred_labels))
     return np.mean(np.array(fracs, dtype=np.float32))
