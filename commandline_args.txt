@@ -21,7 +21,7 @@
   "num_validation": 25000,
   "validation_freq": -1,
   "num_shortlist": 1200,
-  "prediction_introduce_edges": 4,
+  "prediction_introduce_edges": 20,
   "predict_ova": 0,
   "A": 0.6,
   "B": 2.6
