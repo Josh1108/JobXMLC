@@ -64,11 +64,7 @@ class DatasetGraph(torch.utils.data.Dataset):
         self.hard_negs = [list(set(hard_negs[i]) - set(self.res_dict[i]))
                           for i in range(self.X_Y.shape[0])]
 
-        logger.info(
-            "Shape of X_Y = ", self.X_Y.shape, len(
-                self.res_dict), len(
-                hard_negs[1]), len(
-                self.hard_negs[1]), self.res_dict[1])
+        logger.info(f"Shape of X_Y = {str(self.X_Y.shape)}, len(self.res_dict) = {len(self.res_dict)}, len(hard_negs[1]) = {len(hard_negs[1])}, len(self.hard_negs[1]) = {len(self.hard_negs[1])}, np.array_str(self.res_dict[1]) = {np.array_str(self.res_dict[1])}")
 
     def __getitem__(self, index):
         return (index, self.res_dict[index], self.hard_negs[index])

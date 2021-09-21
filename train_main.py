@@ -483,20 +483,20 @@ if __name__ == "__main__":
         sys.exit(
             "You have chosen not to fine tune classifiers using hard negatives by providing num_HN_epochs <= 0")
 
-    print("==================================================================")
+    logger.info("==================================================================")
 
     #########################   M4/Phase2 Training(with hard negatives)   ####
-    print("***params=", params)
-    print("******  Starting HN fine tuning of calssifiers  ******")
+    logger.info("***params=", params)
+    logger.info("******  Starting HN fine tuning of calssifiers  ******")
 
     prediction_shortlist_trn = sample_hard_negatives(
         head_net, label_remapping, partition_indices, trn_X_Y.shape[0], params)
 
     head_criterion = torch.nn.BCEWithLogitsLoss(reduction=params["reduction"])
-    print("Model parameters: ", params)
+    logger.info("Model parameters: ", params)
 
     head_train_dataset = DatasetGraph(trn_X_Y, prediction_shortlist_trn)
-    print('Dataset Loaded')
+    logger.info('Dataset Loaded')
 
     params["num_tst"] = 25000
 
@@ -510,7 +510,7 @@ if __name__ == "__main__":
         params["num_labels"],
         0,
         num_hard_neg=params["num_HN_shortlist"])
-    print('Collator created')
+    logger.info('Collator created')
 
     head_train_loader = torch.utils.data.DataLoader(
         head_train_dataset,
