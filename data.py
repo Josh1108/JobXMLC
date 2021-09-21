@@ -34,7 +34,7 @@ class Graph():
         res = np.empty((len(nodes), count), dtype=np.int64)
         for i in range(len(nodes)):
             universe = np.array(self.adj_lists[nodes[i]], dtype=np.int64) 
-
+            ### Define sorting based on frequency and (similarity, how?)
             if(self.random_shuffle_nbrs == 1):
                 np.random.shuffle(universe)
 
