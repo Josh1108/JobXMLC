@@ -24,5 +24,6 @@
   "prediction_introduce_edges": 10,
   "predict_ova": 0,
   "A": 0.6,
-  "B": 2.6
+  "B": 2.6,
+  "name": "fasttext",
 }

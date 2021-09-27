@@ -13,10 +13,12 @@ import random
 import nmslib
 import sys
 from scipy.sparse import csr_matrix, lil_matrix, load_npz, hstack, vstack
-
+from typing import Tuple
 from torch.utils.data import IterableDataset, DataLoader
 import logging
+
 logger = logging.getLogger("main_logger")
+
 class Graph():
     def __init__(self, feat_data, adj_lists, random_shuffle_nbrs):
         self.feat_data = feat_data
@@ -30,7 +32,7 @@ class Graph():
         default_node: int = -1,
         default_weight: float = 0.0,
         default_node_type: int = -1,
-    ) -> (np.array, np.array, np.array, np.array):
+    ) -> Tuple(np.array, np.array, np.array, np.array):
         res = np.empty((len(nodes), count), dtype=np.int64)
         for i in range(len(nodes)):
             universe = np.array(self.adj_lists[nodes[i]], dtype=np.int64) 

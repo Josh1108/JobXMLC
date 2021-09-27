@@ -150,37 +150,37 @@ def train():
                         update_predicted(batch_data["inputs"] - _start, torch.from_numpy(val_preds),
                                          val_predicted_labels, None, 10)
 
-            print(
+            logger.info(
                 "Per point(ms): ",
                 ((time.time() - t1) / val_predicted_labels.shape[0]) * 1000)
-            acc, _ = run_validation(val_predicted_labels.tocsr(
+            
+            acc = run_validation(val_predicted_labels.tocsr(
             ), val_data["val_labels"], tst_exact_remove, tst_X_Y_trn, inv_prop)
             print("acc = {}".format(acc))
-            logger.info("acc = {}".format(acc))
+            logger.info("acc = %s".format(acc))
+
+
+
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--dataset', required=True, help='dataset name')
+    parser.add_argument('--dataset', help='dataset name')
     parser.add_argument(
         '--devices',
-        required=True,
         help=', separated list of devices to use for training')
     parser.add_argument(
         '--save-model',
-        required=True,
         type=int,
         help='whether to save trained model or not')
 
     parser.add_argument(
         '--num-epochs',
-        required=True,
         type=int,
         help='number of epochs to train the graph(with random negatives) for')
     parser.add_argument(
         '--num-HN-epochs',
-        required=True,
         type=int,
         help='number of epochs to fine tune the classifiers for')
     parser.add_argument(
@@ -190,22 +190,18 @@ if __name__ == "__main__":
         help='batch size to use')
     parser.add_argument(
         '--lr',
-        required=True,
         type=float,
         help='learning rate for entire model except attention weights')
     parser.add_argument(
         '--attention-lr',
-        required=True,
         type=float,
         help='learning rate for attention weights')
     parser.add_argument(
         '--adjust-lr',
-        required=True,
         type=str,
         help=', separated epoch nums at which to adjust lr')
     parser.add_argument(
         '--dlr-factor',
-        required=True,
         type=float,
         help='lr reduction factor')
     parser.add_argument(
@@ -226,12 +222,10 @@ if __name__ == "__main__":
         help='take top neighbors for head labels having documents more than this')
     parser.add_argument(
         '--num-random-samples',
-        required=True,
         type=int,
         help='num of batch random to sample')
     parser.add_argument(
         '--random-shuffle-nbrs',
-        required=True,
         type=int,
         help='shuffle neighbors when sampling for a node')
     parser.add_argument(
@@ -247,12 +241,10 @@ if __name__ == "__main__":
 
     parser.add_argument(
         '--embedding-type',
-        required=True,
         type=str,
         help='embedding type to use, a folder {embedding-type}CondensedData with embeddings files should be present')
     parser.add_argument(
         '--run-type',
-        required=True,
         type=str,
         help='should be PR(Partial Reveal)/NR(No Reveal)')
 
@@ -292,6 +284,10 @@ if __name__ == "__main__":
         default=1.5,
         type=float,
         help='param B for inv prop calculation')
+    parser.add_argument(
+        '--name',
+        default = 'FASTTEXT'
+    )
 
    #============ LOADING CONFIG FILES ============================
     args, _ = parser.parse_known_args()
@@ -400,10 +396,11 @@ if __name__ == "__main__":
         graph,
         NUM_PARTITIONS,
         NUM_TRN_POINTS)
-    logger.info("***params=", params)
+    logger.info("params= %s", params)
     
 
-    #########################   M1/Phase1 Training(with random negatives)   ##
+    #==============================   M1/Phase1 Training(with random negatives) ================
+
     head_net = GalaXCBase(params["num_labels"], params["hidden_dims"], params["devices"],
                           params["feature_dim"], params["fanouts"], params["graph"], params["embed_dims"])
 
@@ -418,7 +415,6 @@ if __name__ == "__main__":
         _end = min(_start + partition_size, trn_X_Y.shape[1])
         partition_indices.append((_start, _end))
 
-    print(partition_indices)
 
     val_data = create_validation_data(valid_tst_point_features, label_features, tst_X_Y_val,
                                       args, params, TST_TAKE, NUM_PARTITIONS)
@@ -430,7 +426,7 @@ if __name__ == "__main__":
 
     head_criterion = torch.nn.BCEWithLogitsLoss(reduction=params["reduction"])
     logger.info("Model parameters: ", params)
-    logger.info("Model configuration: ", head_net)
+    logger.info("Model configuration: ", str(head_net))
 
     head_train_dataset = DatasetGraph(trn_X_Y, hard_negs) # Right now hard_negs are empty
     logger.info('Dataset Loaded')
@@ -440,7 +436,7 @@ if __name__ == "__main__":
         params["num_labels"],
         params["num_random_samples"],
         num_hard_neg=0)
-    print('Collator created')
+    logger.info('Collator created')
 
     head_train_loader = torch.utils.data.DataLoader(
         head_train_dataset,
@@ -462,9 +458,11 @@ if __name__ == "__main__":
 
     # should be kept as how many we want to test on
     params["num_tst"] = tst_X_Y_val.shape[0]
+    #============================================== SAVING MODEL ======================== 
 
     if(args.save_model == 1):
-        model_dir = "{}/GraphXMLModel{}".format(DATASET, RUN_TYPE)
+        model_dir = "{}/GraphXMLModel{}_{}".format(DATASET, RUN_TYPE,params["name"])
+
         if not os.path.exists(model_dir):
             print("Making model dir...")
             os.makedirs(model_dir)
@@ -476,6 +474,12 @@ if __name__ == "__main__":
                 "model_state_dict.pt"))
         with open(os.path.join(model_dir, "model_params.pkl"), "wb") as fout:
             pickle.dump(params, fout, protocol=4)
+        with open(os.path.join(model_dir,"predictions_20"),'w') as f:
+            pass
+
+        with open(os.path.join(model_dir,'commandline_args.txt'), 'w') as f:
+            json.dump(args.__dict__, f, indent=2)
+        
 
     if(params["num_HN_epochs"] <= 0):
         print("Accuracies with graph embeddings to shortlist:")
@@ -485,8 +489,10 @@ if __name__ == "__main__":
 
     logger.info("==================================================================")
 
-    #########################   M4/Phase2 Training(with hard negatives)   ####
-    logger.info("***params=", params)
+    #================================   M4/Phase2 Training(with hard negatives) ===========================
+    
+    logger.info("params= %s", params)
+
     logger.info("******  Starting HN fine tuning of calssifiers  ******")
 
     prediction_shortlist_trn = sample_hard_negatives(

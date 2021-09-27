@@ -71,10 +71,10 @@ def _recall(true_labels_indices, true_labels_indptr,
         _pred_labels = _indices[top_inds]
         to_print_pred = [skill_list[x-1] for x in _pred_labels]
         to_print_true =[skill_list[x-1] for x in _true_labels]
-
-        with open('../data/COLING/predictions_{}'.format(k),'a') as f:
-            f.write(str(to_print_pred)+'\t'+str(to_print_true))
-            f.write('\n')
+        if k==20:
+            with open('../data/COLING/predictions_{}'.format(k),'a') as f:
+                f.write(str(to_print_pred))
+                f.write('\n')
         if(len(_true_labels) > 0):
             fracs.append(len(set(_pred_labels).intersection(
                 set(_true_labels))) / len(_true_labels))
