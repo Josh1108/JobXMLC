@@ -3,7 +3,6 @@ import torch.nn as nn
 from torch.nn.parameter import Parameter
 import torch.nn.functional as F
 import torch.utils.data
-
 import numpy as np
 import math
 import time
@@ -13,30 +12,73 @@ import random
 import nmslib
 import sys
 from scipy.sparse import csr_matrix, lil_matrix, load_npz, hstack, vstack
-
 from torch.utils.data import IterableDataset, DataLoader
-
-
+import logging
+import typing
+logger = logging.getLogger("main_logger")
 class Graph():
     def __init__(self, feat_data, adj_lists, random_shuffle_nbrs):
         self.feat_data = feat_data
         self.adj_lists = adj_lists
         self.random_shuffle_nbrs = random_shuffle_nbrs
 
-    def sample_neighbors(
-        self,
-        nodes: np.array,
-        count: int = 10,
-        default_node: int = -1,
-        default_weight: float = 0.0,
-        default_node_type: int = -1,
-    ) -> (np.array, np.array, np.array, np.array):
+    def sample_neighbors(self,nodes: np.array,count: int = 10,default_node: int = -1,default_weight: float = 0.0,default_node_type: int = -1,) -> typing.Tuple(np.array, np.array, np.array, np.array):
         res = np.empty((len(nodes), count), dtype=np.int64)
         for i in range(len(nodes)):
-            universe = np.array(self.adj_lists[nodes[i]], dtype=np.int64)
-
+            universe = np.array(self.adj_lists[nodes[i]], dtype=np.int64) 
+            ### Define sorting based on frequency and (similarity, how?)
             if(self.random_shuffle_nbrs == 1):
                 np.random.shuffle(universe)
+
+            # If there are no neighbors, fill results with a dummy value.
+            if len(universe) == 0:
+                res[i] = np.full(count, -1, dtype=np.int64)
+            else:
+                repetitions = int(count / len(universe)) + 1
+                res[i] = np.resize(np.tile(universe, repetitions), count)
+
+        return (
+            res,
+            np.full((len(nodes), count), 0.0, dtype=np.float32),
+            np.full((len(nodes), count), -1, dtype=np.int32),
+            np.full((len(nodes)), 0, dtype=np.int32),
+        )
+
+    def sample_frequency_neighbors(self,nodes: np.array,count: int = 10,default_node: int = -1,default_weight: float = 0.0,default_node_type: int = -1,) -> (np.array, np.array, np.array, np.array):
+        
+        res = np.empty((len(nodes), count), dtype=np.int64)
+        for i in range(len(nodes)):
+            universe = np.array(self.adj_lists[nodes[i]], dtype=np.int64) 
+            ### Define sorting based on frequency and (similarity, how?)
+            #adding frequency
+            #check if the skill label connected to many nodes
+            if(self.random_shuffle_nbrs == 1):
+                    count=0
+                    print("print neighbors",adj_lists[nodes[i]])
+                    print("print key values",nodes[i])
+                    count
+
+            # If there are no neighbors, fill results with a dummy value.
+            if len(universe) == 0:
+                res[i] = np.full(count, -1, dtype=np.int64)
+            else:
+                repetitions = int(count / len(universe)) + 1
+                res[i] = np.resize(np.tile(universe, repetitions), count)
+
+        return (
+            res,
+            np.full((len(nodes), count), 0.0, dtype=np.float32),
+            np.full((len(nodes), count), -1, dtype=np.int32),
+            np.full((len(nodes)), 0, dtype=np.int32),
+        )
+    def sample_similarity_neighbors(self,nodes: np.array,count: int = 10,default_node: int = -1,default_weight: float = 0.0,default_node_type: int = -1,) -> (np.array, np.array, np.array, np.array):
+        res = np.empty((len(nodes), count), dtype=np.int64)
+        for i in range(len(nodes)):
+            universe = np.array(self.adj_lists[nodes[i]], dtype=np.int64) 
+            if(self.random_shuffle_nbrs == 1):
+                #calculate cosine similarity            
+
+                #np.random.shuffle(universe)
 
             # If there are no neighbors, fill results with a dummy value.
             if len(universe) == 0:
@@ -64,11 +106,7 @@ class DatasetGraph(torch.utils.data.Dataset):
         self.hard_negs = [list(set(hard_negs[i]) - set(self.res_dict[i]))
                           for i in range(self.X_Y.shape[0])]
 
-        print(
-            "Shape of X_Y = ", self.X_Y.shape, len(
-                self.res_dict), len(
-                hard_negs[1]), len(
-                self.hard_negs[1]), self.res_dict[1])
+        logger.info(f"Shape of X_Y = {str(self.X_Y.shape)}, len(self.res_dict) = {len(self.res_dict)}, len(hard_negs[1]) = {len(hard_negs[1])}, len(self.hard_negs[1]) = {len(self.hard_negs[1])}, np.array_str(self.res_dict[1]) = {np.array_str(self.res_dict[1])}")
 
     def __getitem__(self, index):
         return (index, self.res_dict[index], self.hard_negs[index])
@@ -99,16 +137,17 @@ class GraphCollator():
             all_labels_pos = [b[1] for b in batch]
             # hard_neg = np.array([b[2][:self.num_hard_neg] for b in batch], dtype=np.int64)
             label_ids = np.zeros((self.num_labels, ), dtype=np.bool)
-
+            
             label_ids[[x for subl in all_labels_pos for x in subl]] = 1
             label_ids[[x for b in batch for x in b[2]]] = 1
             # label_ids[np.ravel(hard_neg)] = 1
-
+            # print(len(np.where(label_ids == 0)[0]))
             random_neg = np.random.choice(
                 np.where(
                     label_ids == 0)[0],
                 self.num_random,
                 replace=False)
+            # print(len(label_ids))
             label_ids[random_neg] = 1
 
             label_map = {
@@ -161,3 +200,4 @@ class DatasetGraphPredictionEncode(torch.utils.data.Dataset):
 
     def __len__(self):
         return len(self.nodes)
+

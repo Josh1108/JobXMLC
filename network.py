@@ -168,10 +168,12 @@ class SageEncoder(nn.Module):
         graph,
     ):
         context = {}
+        print("number of nodes",nodes)
+        print("num of samples",self.num_sample)
         neigh_nodes = graph.sample_neighbors(nodes, self.num_sample)[
             0
         ].flatten()
-
+        print("neighboring nodes",neigh_nodes)
         context["node_feats"] = self.query_func(
             nodes, graph
         )
