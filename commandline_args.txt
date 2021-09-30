@@ -2,11 +2,11 @@
   "dataset": "./../data/COLING",
   "devices": "cuda:0",
   "save_model": 1,
-  "num_epochs": 30,
+  "num_epochs": 40,
   "num_HN_epochs": 10,
   "batch_size": 256,
   "lr": 0.0001,
-  "attention_lr": 0.001,
+  "attention_lr": 0.0001,
   "adjust_lr": "4,8,12,16,20,22,26",
   "dlr_factor": 0.5,
   "mpt": 0,
@@ -18,11 +18,12 @@
   "num_HN_shortlist": 500,
   "embedding_type": "Fine-FT",
   "run_type": "NR",
-  "num_validation": 25000,
+  "num_validation": 10000,
   "validation_freq": -1,
   "num_shortlist": 500,
   "prediction_introduce_edges": 4,
   "predict_ova": 0,
   "A": 0.6,
-  "B": 2.6
+  "B": 2.6,
+  "name": "finetuned-fasttext"
 }

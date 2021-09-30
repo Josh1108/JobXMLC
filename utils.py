@@ -55,7 +55,7 @@ def make_csr_from_ll(ll, num_z):
 
 # @nb.njit(cache=True)
 def _recall(true_labels_indices, true_labels_indptr,
-            pred_labels_data, pred_labels_indices, pred_labels_indptr, k):
+            pred_labels_data, pred_labels_indices, pred_labels_indptr, k,dir):
     skill_list =[]
     with open('../data/COLING/Y.txt','r') as f:
         lines = f.readlines()
@@ -71,10 +71,10 @@ def _recall(true_labels_indices, true_labels_indptr,
         _pred_labels = _indices[top_inds]
         to_print_pred = [skill_list[x-1] for x in _pred_labels]
         to_print_true =[skill_list[x-1] for x in _true_labels]
-
-        with open('../data/COLING/predictions_{}'.format(k),'a') as f:
-            f.write(str(to_print_pred)+'\t'+str(to_print_true))
-            f.write('\n')
+        if k==20:
+            with open(os.path.join(dir,'predictions_{}'.format(k)),'a') as f:
+                f.write(str(to_print_pred))
+                f.write('\n')
         if(len(_true_labels) > 0):
             fracs.append(len(set(_pred_labels).intersection(
                 set(_true_labels))) / len(_true_labels))
@@ -97,13 +97,13 @@ def _precision(true_labels_indices, true_labels_indptr,
                 set(_true_labels))) / len(_pred_labels))
     return np.mean(np.array(fracs, dtype=np.float32))
 
-def precision(true_labels,pred_labels,k):
+def precision(true_labels,pred_labels,k,dir):
     return _precision(true_labels.indices.astype(np.int64), true_labels.indptr,
                    pred_labels.data, pred_labels.indices.astype(np.int64), pred_labels.indptr, k)
 
-def recall(true_labels, pred_labels, k):
+def recall(true_labels, pred_labels, k,dir):
     return _recall(true_labels.indices.astype(np.int64), true_labels.indptr,
-                   pred_labels.data, pred_labels.indices.astype(np.int64), pred_labels.indptr, k)
+                   pred_labels.data, pred_labels.indices.astype(np.int64), pred_labels.indptr, k,dir)
 
 
 def create_params_dict(args, node_features, trn_X_Y,
@@ -257,7 +257,8 @@ def prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label
 
         trn_point_titles = trn_point_titles + tst_point_titles
 
-        label_remapping = remap_label_indices(trn_point_titles, label_titles) # There is no remapping in our case, we can comment this part
+        label_remapping = remap_label_indices(trn_point_titles, label_titles)
+        
         adj_list = [[label_remapping[x] for x in subl] for subl in adj_list]
 
         temp = {v: k for k, v in label_remapping.items() if v >=

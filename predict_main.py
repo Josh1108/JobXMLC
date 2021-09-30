@@ -81,7 +81,7 @@ def update_predicted_shortlist(
 
 
 def run_validation(val_predicted_labels, tst_X_Y_val,
-                   tst_exact_remove, tst_X_Y_trn, inv_prop):
+                   tst_exact_remove, tst_X_Y_trn, inv_prop,dir):
     data = []
     indptr = [0]
     indices = []
@@ -106,17 +106,18 @@ def run_validation(val_predicted_labels, tst_X_Y_val,
 
 
     print()
-    acc = xc_metrics.Metrics(tst_X_Y_val, inv_psp=inv_prop)
-    acc = acc.eval(_pred, 5)
+    # acc = xc_metrics.Metrics(tst_X_Y_val, inv_psp=inv_prop)
+    # acc = acc.eval(_pred, 5)
     recall_lis =[]
     prec_lis =[]
+    
     for num in [5,10,20,30,50,100]:
-        _rec = recall(tst_X_Y_val, _pred, num)
+        _rec = recall(tst_X_Y_val, _pred, num,dir)
         recall_lis.append(_rec)
-        _prec = precision(tst_X_Y_val,_pred,num)
+        _prec = precision(tst_X_Y_val,_pred,num,dir)
         prec_lis.append(_prec)
     
-    return (acc, recall_lis,prec_lis), _pred
+    return recall_lis,prec_lis
 
 def encode_nodes(net, context):
     net.eval()
@@ -135,7 +136,7 @@ def encode_nodes(net, context):
 
 
 def validate(head_net, params, partition_indices, label_remapping,
-             label_embs, tst_point_embs, tst_X_Y_val, tst_exact_remove, tst_X_Y_trn, use_graph_embs, topK):
+             label_embs, tst_point_embs, tst_X_Y_val, tst_exact_remove, tst_X_Y_trn, use_graph_embs, topK,dir):
     _start = params["num_trn"]
     _end = _start + params["num_tst"]
 
@@ -253,6 +254,6 @@ def validate(head_net, params, partition_indices, label_remapping,
             update_predicted_shortlist((batch_data["inputs"]) - _start, val_preds,
                                        val_predicted_labels, val_short, None, topK)
 
-    acc, _ = run_validation(val_predicted_labels.tocsr(
-    ), val_data["val_labels"], tst_exact_remove, tst_X_Y_trn, params["inv_prop"])
+    acc = run_validation(val_predicted_labels.tocsr(
+    ), val_data["val_labels"], tst_exact_remove, tst_X_Y_trn, params["inv_prop"],dir)
     print("acc = {}".format(acc))
