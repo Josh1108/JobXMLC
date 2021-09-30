@@ -39,7 +39,7 @@ torch.cuda.manual_seed_all(22)
 np.random.seed(22)
 
 
-def test():
+def test(dir):
     if(RUN_TYPE == "NR"):
         # introduce the tst points into the graph, assume all tst points known
         # at once. For larger graphs, doing ANNS on trn_points, labels work
@@ -61,7 +61,7 @@ def test():
 
     t1 = time.time()
     validate(head_net, params, partition_indices, label_remapping,
-             label_features, valid_tst_point_features, tst_X_Y_val, tst_exact_remove, tst_X_Y_trn, True, 100)
+             label_features, valid_tst_point_features, tst_X_Y_val, tst_exact_remove, tst_X_Y_trn, True, 100,dir)
     print("Prediction time Per point(ms): ",
           ((time.time() - t1) / valid_tst_point_features.shape[0]) * 1000)
 
@@ -155,7 +155,7 @@ def train():
                 ((time.time() - t1) / val_predicted_labels.shape[0]) * 1000)
             
             acc = run_validation(val_predicted_labels.tocsr(
-            ), val_data["val_labels"], tst_exact_remove, tst_X_Y_trn, inv_prop)
+            ), val_data["val_labels"], tst_exact_remove, tst_X_Y_trn, inv_prop,dir)
             print("acc = {}".format(acc))
             logger.info("acc = %s".format(acc))
 
@@ -294,6 +294,8 @@ if __name__ == "__main__":
 
     with open('commandline_args.txt', 'r') as f:
         args.__dict__ = json.load(f)
+    
+    
 
     DATASET = args.dataset
     NUM_PARTITIONS = len(args.devices.strip().split(","))
@@ -305,12 +307,14 @@ if __name__ == "__main__":
     RUN_TYPE = args.run_type
     TST_TAKE = args.num_validation
     NUM_TRN_POINTS = -1
+
     logging.basicConfig(format='%(asctime)s - %(message)s',
-        filename="{}/GraphXMLBERT_log_{}.txt".format(DATASET, RUN_TYPE), level=logging.INFO)
+        filename="{}/models/GraphXMLBERT_log_{}_{}.txt".format(DATASET, RUN_TYPE,args.name), level=logging.INFO)
     logger = logging.getLogger("main_logger")
 
 
     logger.info("================= STARTING NEW RUN =====================")
+    
     logger.info(" ARGUMENTS ")
     for arg, value in sorted(vars(args).items()):
         logger.info("Argument %s: %r", arg, value)
@@ -461,7 +465,7 @@ if __name__ == "__main__":
     #============================================== SAVING MODEL ======================== 
 
     if(args.save_model == 1):
-        model_dir = "{}/GraphXMLModel{}_{}".format(DATASET, RUN_TYPE,params["name"])
+        model_dir = "{}/models/GraphXMLModel{}_{}".format(DATASET, RUN_TYPE,args.name)
 
         if not os.path.exists(model_dir):
             print("Making model dir...")
@@ -542,4 +546,4 @@ if __name__ == "__main__":
     print("==================================================================")
     print("Accuracies with graph embeddings to shortlist:")
     params["num_tst"] = tst_X_Y_val.shape[0]
-    test()
+    test(model_dir)
