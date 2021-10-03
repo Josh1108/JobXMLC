@@ -258,13 +258,13 @@ def prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label
         trn_point_titles = trn_point_titles + tst_point_titles
 
         label_remapping = remap_label_indices(trn_point_titles, label_titles)
-        
+
         adj_list = [[label_remapping[x] for x in subl] for subl in adj_list]
 
         temp = {v: k for k, v in label_remapping.items() if v >=
                 len(trn_point_titles)}
-        logging.info("len(label_remapping), len(temp), len(trn_point_titles)",
-              len(label_remapping), len(temp), len(trn_point_titles))
+        logging.info("len(label_remapping), len(temp), len(trn_point_titles)"+
+              str(len(label_remapping)) + str(len(temp)) + str(len(trn_point_titles)))
 
         new_label_indices = sorted(list(temp.keys()))
 
@@ -277,9 +277,8 @@ def prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label
 
         node_features = np.vstack(
             [trn_point_features, valid_tst_point_features, new_label_features])
-        logging.info("node_features.shape", node_features.shape)
+        logging.info("node_features.shape" + str(node_features.shape))
 
-        logging.info("len(adj_list)", len(adj_list))
         
         adjecency_lists = [[] for i in range(node_features.shape[0])] # Single list of lists for all nodes. labels -> JD and JD -> label.
         
@@ -295,7 +294,7 @@ def prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label
     if(args.restrict_edges_num >= 3): # if number of neighbours are restricted take frequent labels (args.restrict_edges_head_threshold) in datset and change adjecency lists to reflect
                                       # the neighbour pruning.
         head_labels = np.where(
-            np.sum(
+            np.sum( 
                 trn_X_Y.astype(
                     np.bool),
                 axis=0) > args.restrict_edges_head_threshold)[0]
@@ -305,14 +304,28 @@ def prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label
 
         for lbl in head_labels:
             _nid = label_remapping[lbl]
-            distances = distance.cdist([node_features[_nid]], [
-                                       node_features[x] for x in adjecency_lists[_nid]], "cosine")[0]
+            distances = distance.cdist([node_features[_nid]], [node_features[x] for x in adjecency_lists[_nid]], "cosine")[0]
             sorted_indices = np.argsort(distances)
+
 
             new_nbrs = []
             for k in range(min(args.restrict_edges_num, len(sorted_indices))):
                 new_nbrs.append(adjecency_lists[_nid][sorted_indices[k]])
             adjecency_lists[_nid] = new_nbrs
+
+
+    n_a = np.sum(trn_X_Y.astype(np.bool),axis=0)
+    n_a = np.asarray(n_a).flatten()
+    sorted_indices = np.argsort(-n_a) # Decreasing
+
+    for j in range(trn_X_Y.shape[0]):
+
+        new_nbrs=[]
+        for i in range(len(sorted_indices)):
+            _nid = label_remapping[sorted_indices[i]]
+            if _nid in adjecency_lists[j]:
+                new_nbrs.append(_nid)
+        adjecency_lists[j] = new_nbrs
 
     return tst_valid_inds, trn_X_Y, tst_X_Y_trn, tst_X_Y_val, node_features, valid_tst_point_features, label_remapping, adjecency_lists, NUM_TRN_POINTS
 

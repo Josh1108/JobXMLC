@@ -157,7 +157,7 @@ def train():
             acc = run_validation(val_predicted_labels.tocsr(
             ), val_data["val_labels"], tst_exact_remove, tst_X_Y_trn, inv_prop,dir)
             print("acc = {}".format(acc))
-            logger.info("acc = %s".format(acc))
+            logger.info("Recall:" + " ".join(acc[0])+" \nPrecision"+ " ".join(acc[1]))
 
 
 
@@ -318,7 +318,7 @@ if __name__ == "__main__":
     logger.info(" ARGUMENTS ")
     for arg, value in sorted(vars(args).items()):
         logger.info("Argument %s: %r", arg, value)
-    logger.info("=======NUM_PARTITIONS ( GPU's)==================",NUM_PARTITIONS)
+    logger.info("=======NUM_PARTITIONS ( GPU's)=================="+ str(NUM_PARTITIONS))
 
 
     #===========================   Data load   ===========================

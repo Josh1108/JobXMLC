@@ -47,32 +47,36 @@ class Graph():
         default_node: int = -1,
         default_weight: float = 0.0,
         default_node_type: int = -1,
-        criteria: str = 'none'
+        criteria: str = 'nonw'
     ) -> Tuple[np.array, np.array, np.array, np.array]:
 
         res = np.empty((len(nodes), count), dtype=np.int64)
+
         for i in range(len(nodes)):
             universe = np.array(self.adj_lists[nodes[i]], dtype=np.int64)
 
-            ### Define sorting based on frequency and (similarity, how?)
-            if criteria=='freq': # Sort on basis of frequency
-                skill_lis = self.read_skills('skill_list (1).txt')
-                skill_lis_freq = self.read_freq_skills('skill_freqfile.csv')
+            # ### Define sorting based on frequency and (similarity, how?)
+            # if criteria=='freq': # Sort on basis of frequency
+            #     skill_lis = self.read_skills('skill_list (1).txt')
+            #     skill_lis_freq = self.read_freq_skills('skill_freqfile.csv')
                 
-                skill_order = [skill_lis.index(x)+1 for x in skill_lis_freq]
+            #     skill_order = [skill_lis.index(x)+1 for x in skill_lis_freq]
 
-                index_lis =[]
-                for item in self.adj_lists[nodes[i]]:
-                    print(item)
-                    ind = skill_order.index(item)
-                    index_lis.append(ind)
-                sorted_neighbours = [x for _, x in sorted(zip(index_lis, self.adj_lists[nodes[i]]), key=lambda pair: pair[0])]  
-
-                universe = np.array(sorted_neighbours,dtype=np.int64)
-
-
-                
-            elif(self.random_shuffle_nbrs == 1):
+            #     index_lis =[]
+            #     Flag =0
+            #     for item in self.adj_lists[nodes[i]]:
+            #         print(item)
+            #         if item>=18267:
+            #             Flag =1
+            #             ind = skill_order.index(item-18267)
+            #             index_lis.append(ind)
+            #     if Flag ==1:
+            #         sorted_neighbours = [x-18267 for _, x in sorted(zip(index_lis, self.adj_lists[nodes[i]]), key=lambda pair: pair[0])]  
+            #         print(sorted_neighbours)
+            #         exit()
+            #         universe = np.array(sorted_neighbours,dtype=np.int64)
+            #     else:    
+            if self.random_shuffle_nbrs == 1:
                 np.random.shuffle(universe)
 
             # If there are no neighbors, fill results with a dummy value.
