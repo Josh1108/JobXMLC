@@ -3,7 +3,6 @@ import torch.nn as nn
 from torch.nn.parameter import Parameter
 import torch.nn.functional as F
 import torch.utils.data
-
 import numpy as np
 import numba as nb
 import math
@@ -15,11 +14,9 @@ import nmslib
 import sys
 from scipy.spatial import distance
 from scipy.sparse import csr_matrix, lil_matrix, load_npz, hstack, vstack
-
 from xclib.data import data_utils
 from xclib.utils.sparse import normalize
 import xclib.evaluation.xc_metrics as xc_metrics
-
 from network import *
 from data import *
 import predict_main
@@ -60,7 +57,7 @@ def _recall(true_labels_indices, true_labels_indptr,
     with open('../data/COLING/Y.txt','r') as f:
         lines = f.readlines()
         skill_list = [line.rstrip() for line in lines]
-    print(skill_list[0])
+    print("skill list",skill_list[0])
         
     fracs = []
     for i in range(len(true_labels_indptr) - 1):
@@ -140,9 +137,7 @@ def create_params_dict(args, node_features, trn_X_Y,
     params["restrict_edges_num"] = args.restrict_edges_num
     params["restrict_edges_head_threshold"] = args.restrict_edges_head_threshold
     params["random_shuffle_nbrs"] = args.random_shuffle_nbrs
-
     return params
-
 
 def sample_anns_nbrs(label_features, tst_point_features, num_nbrs=4):
     """
@@ -205,7 +200,8 @@ def prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label
 
         adj_list = [trn_X_Y.indices[trn_X_Y.indptr[i]: trn_X_Y.indptr[i + 1]]
                     for i in range(len(trn_X_Y.indptr) - 1)] + val_adj_list_trn
-
+        print("adjacency list",adj_list)
+        print("training pointers", trn_X_Y.indices[trn_X_Y.indptr[0]: trn_X_Y.indptr[0 + 1]]) 
         trn_point_titles = trn_point_titles + \
             [tst_point_titles[i] for i in tst_valid_inds]
 
@@ -249,7 +245,7 @@ def prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label
 
     elif(args.run_type == "NR"):
         tst_X_Y_val = tst_X_Y
-        tst_X_Y_trn = lil_matrix(tst_X_Y_val.shape).tocsr()  # Made an empty csr matrix of the same shape as js v labels csr
+        tst_X_Y_trn = lil_matrix(tst_X_Y_val.shape).tocsr()  # Made an empty csr matrix of the same shape as jds v labels csr
         valid_tst_point_features = tst_point_features  # numpy array copied
 
         adj_list = [trn_X_Y.indices[trn_X_Y.indptr[i]: trn_X_Y.indptr[i + 1]] 
@@ -263,11 +259,12 @@ def prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label
 
         temp = {v: k for k, v in label_remapping.items() if v >=
                 len(trn_point_titles)}
+        # print(len(temp))
         logging.info("len(label_remapping), len(temp), len(trn_point_titles)"+
               str(len(label_remapping)) + str(len(temp)) + str(len(trn_point_titles)))
 
         new_label_indices = sorted(list(temp.keys()))
-
+        # print(new_label_indices)
         _x = [temp[x] for x in new_label_indices]
         new_label_features = label_features[_x]
         lengths = [
@@ -286,27 +283,31 @@ def prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label
             for x in l:
                 adjecency_lists[i].append(x)
                 adjecency_lists[x].append(i)
-
-        tst_valid_inds = np.arange(tst_X_Y_val.shape[0])
+        # Here we have the adjacency list and it's shape is (20817,x)
+        tst_valid_inds = np.arange(tst_X_Y_val.shape[0]) # indexes of test data. (2029)
 
         NUM_TRN_POINTS = trn_point_features.shape[0] # Size of training data
 
     if(args.restrict_edges_num >= 3): # if number of neighbours are restricted take frequent labels (args.restrict_edges_head_threshold) in datset and change adjecency lists to reflect
                                       # the neighbour pruning.
-        head_labels = np.where(
-            np.sum( 
-                trn_X_Y.astype(
-                    np.bool),
-                axis=0) > args.restrict_edges_head_threshold)[0]
+
+        head_labels = np.where(np.sum( trn_X_Y.astype(np.bool),axis=0)>args.restrict_edges_head_threshold)[1]
+        # print(trn_X_Y.astype(np.bool))
+        # print("Value",np.sum( trn_X_Y.astype(np.bool),axis=0),np.sum( trn_X_Y.astype(np.bool),axis=0).shape)
+        # print(np.where(np.sum( trn_X_Y.astype(np.bool),axis=0)==0))
+        # print(labels,len(labels))
         logging.info(
             "Restricting edges: Number of head labels = {}".format(
                 len(head_labels)))
+        # print(head_labels)
 
         for lbl in head_labels:
+            if lbl!=0:
+                continue
             _nid = label_remapping[lbl]
+            # print(_nid)
             distances = distance.cdist([node_features[_nid]], [node_features[x] for x in adjecency_lists[_nid]], "cosine")[0]
-            sorted_indices = np.argsort(distances)
-
+            sorted_indices = np.argsort(-distances)
 
             new_nbrs = []
             for k in range(min(args.restrict_edges_num, len(sorted_indices))):
@@ -316,7 +317,8 @@ def prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label
 
     n_a = np.sum(trn_X_Y.astype(np.bool),axis=0)
     n_a = np.asarray(n_a).flatten()
-    sorted_indices = np.argsort(-n_a) # Decreasing
+    # sorted_indices = np.argsort(-n_a) # Decreasing
+    sorted_indices = np.argsort(n_a)
 
     for j in range(trn_X_Y.shape[0]):
 
@@ -331,7 +333,7 @@ def prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label
 
 
 def create_validation_data(valid_tst_point_features, label_features, tst_X_Y_val,
-                           args, params, TST_TAKE, NUM_PARTITIONS):
+                           args, params, TST_TAKE, NUM_PARTITIONS,partition_indices,head_net):
     """
     Create validation data. For val accuracy pattern observation
     This won't provide correct valdation picture as init(not graph) embeddings used and tst connection not added

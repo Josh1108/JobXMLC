@@ -1,4 +1,7 @@
 # GalaXC
+
+An attempt to creat a more generalisable and reusable fork of the original repository.
+
 ## [GalaXC: Graph Neural Networks with Labelwise Attention for Extreme Classification](http://manikvarma.org/pubs/saini21.pdf)
 ```bib
 @InProceedings{Saini21,

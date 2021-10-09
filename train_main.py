@@ -419,9 +419,10 @@ if __name__ == "__main__":
         _end = min(_start + partition_size, trn_X_Y.shape[1])
         partition_indices.append((_start, _end))
 
+    # getting error if we try to create a validation set - check why later on. For now not keeping a validation set!
 
     val_data = create_validation_data(valid_tst_point_features, label_features, tst_X_Y_val,
-                                      args, params, TST_TAKE, NUM_PARTITIONS)
+                                      args, params, TST_TAKE, NUM_PARTITIONS,partition_indices,head_net)
 
 
 
@@ -462,6 +463,7 @@ if __name__ == "__main__":
 
     # should be kept as how many we want to test on
     params["num_tst"] = tst_X_Y_val.shape[0]
+
     #============================================== SAVING MODEL ======================== 
 
     if(args.save_model == 1):
@@ -487,7 +489,7 @@ if __name__ == "__main__":
 
     if(params["num_HN_epochs"] <= 0):
         print("Accuracies with graph embeddings to shortlist:")
-        test()
+        test(model_dir)
         sys.exit(
             "You have chosen not to fine tune classifiers using hard negatives by providing num_HN_epochs <= 0")
 
