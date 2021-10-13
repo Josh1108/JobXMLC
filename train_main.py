@@ -40,7 +40,7 @@ np.random.seed(22)
 
 
 def test(dir):
-    if(RUN_TYPE == "NR"):
+    if(RUN_TYPE == "PR"): # changed to PR from NR - Jushaan
         # introduce the tst points into the graph, assume all tst points known
         # at once. For larger graphs, doing ANNS on trn_points, labels work
         # equally well.

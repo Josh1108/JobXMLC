@@ -184,7 +184,7 @@ def prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label
     
     if(args.run_type == "PR"):
         tst_valid_inds = np.where(
-            tst_X_Y.indptr[1:] - tst_X_Y.indptr[:-1] > 1)[0]
+            tst_X_Y.indptr[1:] - tst_X_Y.indptr[:-1] > 1)[0] # Number of test points having at least one label
         # in original dataset some points in tst have no labels
         print("point with 0 labels:", np.sum(
             tst_X_Y.indptr[1:] - tst_X_Y.indptr[:-1] == 0))
