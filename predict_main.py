@@ -15,7 +15,7 @@ import pickle
 import random
 import nmslib
 import sys
-from scipy.sparse import csr_matrix, lil_matrix, load_npz, hstack, vstack
+from scipy.sparse import csr_matrix, lil_matrix, load_npz, hstack, vstack,save_npz
 
 from xclib.data import data_utils
 from xclib.utils.sparse import normalize
@@ -162,6 +162,7 @@ def validate(head_net, params, partition_indices, label_remapping,
             encoded = encode_nodes(head_net, batch)
             encoded = encoded.detach().cpu().numpy()
             label_embs_graph[batch["indices"]] = encoded
+        np.save('dumps/GalaXC-label-embeddings',label_embs_graph)
 
         val_dataset = DatasetGraphPredictionEncode(
             [i for i in range(_start, _end)])
@@ -180,7 +181,8 @@ def validate(head_net, params, partition_indices, label_remapping,
             encoded = encode_nodes(head_net, batch)
             encoded = encoded.detach().cpu().numpy()
             tst_point_embs_graph[batch["indices"]] = encoded
-
+        print(tst_point_embs_graph.shape)
+        np.save('dumps/GalaXC-tst-embeddings',tst_point_embs_graph)
         label_features = label_embs_graph
         tst_point_features = tst_point_embs_graph
     else:
@@ -253,7 +255,8 @@ def validate(head_net, params, partition_indices, label_remapping,
 
             update_predicted_shortlist((batch_data["inputs"]) - _start, val_preds,
                                        val_predicted_labels, val_short, None, topK)
-
+    save_npz('./dumps/predictions-GalaXC.npz', val_predicted_labels.tocsr(
+    ))
     acc = run_validation(val_predicted_labels.tocsr(
     ), val_data["val_labels"], tst_exact_remove, tst_X_Y_trn, params["inv_prop"],dir)
     print("acc = {}".format(acc))

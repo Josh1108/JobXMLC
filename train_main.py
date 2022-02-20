@@ -40,7 +40,7 @@ np.random.seed(22)
 
 
 def test(dir):
-    if(RUN_TYPE == "PR"): # changed to PR from NR - Jushaan
+    if(RUN_TYPE == "NR"):
         # introduce the tst points into the graph, assume all tst points known
         # at once. For larger graphs, doing ANNS on trn_points, labels work
         # equally well.
@@ -340,13 +340,13 @@ if __name__ == "__main__":
             encoding="latin").readlines()]
     print("len(trn_point_titles), len(tst_point_titles), len(label_titles) = ", len(
         trn_point_titles), len(tst_point_titles), len(label_titles))
-
     trn_point_features = np.load(
-        "{}/{}CondensedData/trn_point_embs.npy".format(DATASET, EMB_TYPE))
+        "{}/{}CondensedData/trn_point_embs.npy".format(DATASET, EMB_TYPE),allow_pickle=True)
     label_features = np.load(
-        "{}/{}CondensedData/label_embs.npy".format(DATASET, EMB_TYPE))
+        "{}/{}CondensedData/label_embs.npy".format(DATASET, EMB_TYPE),allow_pickle=True)
+    
     tst_point_features = np.load(
-        "{}/{}CondensedData/tst_point_embs.npy".format(DATASET, EMB_TYPE))
+        "{}/{}CondensedData/tst_point_embs.npy".format(DATASET, EMB_TYPE),allow_pickle=True)
     print(
         "trn_point_features.shape, tst_point_features.shape, label_features.shape",
         trn_point_features.shape,
@@ -355,6 +355,7 @@ if __name__ == "__main__":
 
     trn_X_Y = data_utils.read_sparse_file(
         "{}/trn_X_Y.txt".format(DATASET),force_header =True)
+
     tst_X_Y = data_utils.read_sparse_file(
         "{}/tst_X_Y.txt".format(DATASET),force_header=True)
 
