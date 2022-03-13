@@ -416,8 +416,9 @@ def prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label
     
     n_a = np.sum(trn_X_Y.astype(np.bool),axis=0)
     n_a = np.asarray(n_a).flatten()
-    # sorted_indices = np.argsort(-n_a) # Decreasing
+    #sorted_indices = np.argsort(-n_a) # Decreasing
     sorted_indices = np.argsort(n_a)
+    #sorted_indices = np.asarray(n_a).flatten()
 
     for j in range(trn_X_Y.shape[0]):
         new_nbrs=[]

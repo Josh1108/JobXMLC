@@ -12,6 +12,7 @@ import torch.nn.functional as F
 import torch.utils.data
 import logging
 
+
 class MeanAggregator(nn.Module):
     """Aggregates a node's embeddings using mean of neighbors' embeddings."""
 
@@ -168,12 +169,12 @@ class SageEncoder(nn.Module):
         graph,
     ):
         context = {}
-        print("number of nodes",nodes)
-        print("num of samples",self.num_sample)
+        # print("number of nodes",nodes)
+        # print("num of samples",self.num_sample)
         neigh_nodes = graph.sample_neighbors(nodes, self.num_sample)[
             0
         ].flatten()
-        print("neighboring nodes",neigh_nodes)
+        # print("neighboring nodes",neigh_nodes)
         context["node_feats"] = self.query_func(
             nodes, graph
         )
@@ -370,7 +371,7 @@ class LinearDistributed(nn.Module):
             _end = min(_start + self.partition_size, output_size)
             self.partition_indices.append((_start, _end))
 
-        print(self.partition_indices)
+        # print(self.partition_indices)
 
         self.classifiers = nn.ModuleList()
         for i in range(len(self.device_embeddings)):
@@ -470,7 +471,7 @@ class GalaXCBase(nn.Module):
                  feature_dim: int,
                  fanouts: list,
                  graph,
-                 embed_dim: int,
+                 embed_dim: int, encoder:str,
                  dropout=0.5, num_clf_partitions=1, padding_idx=0):
         super(GalaXCBase, self).__init__()
 
@@ -483,6 +484,7 @@ class GalaXCBase(nn.Module):
         self.feature_dim = feature_dim
         self.hidden_dims = hidden_dims
         self.embed_dim = embed_dim
+        self.encoder=encoder
         self.device_names = device_names
         self.device_name = self.device_names[0]
         self.device_embeddings = torch.device(self.device_name)
@@ -491,7 +493,7 @@ class GalaXCBase(nn.Module):
         self.padding_idx = padding_idx
         self.num_clf_partitions = num_clf_partitions
 
-        self._construct_embeddings()
+        self._construct_embeddings(encoder)
         self.transform1 = self._construct_transform()
         self.transform2 = self._construct_transform()
         self.transform3 = self._construct_transform()
@@ -511,51 +513,126 @@ class GalaXCBase(nn.Module):
         return LinearDistributed(
             self.hidden_dims, self.num_labels, self.device_names)
 
-    def _construct_embeddings(self):
+    def _construct_embeddings(self,encoder):
         """
         Some calculation is repeated. Optimizing doesn't help much, keeping for simplicity.
         """
         def feature_func(features): return features.squeeze(0)
+        if encoder=="GIN":
+            self.first_layer_enc = GINEncoder(
+                features=feature_func,
+                query_func=None,
+                feature_dim=self.feature_dim,
+                intermediate_dim=self.feature_dim,
+                aggregator=SumAggregator(feature_func),
+                embed_dim=self.embed_dim,
+                num_sample=self.fanouts[0],
+                device_name=self.device_name
+            )
 
-        self.first_layer_enc = GINEncoder(
-            features=feature_func,
-            query_func=None,
-            feature_dim=self.feature_dim,
-            intermediate_dim=self.feature_dim,
-            aggregator=SumAggregator(feature_func),
-            embed_dim=self.embed_dim,
-            num_sample=self.fanouts[0],
-            device_name=self.device_name
-        )
+            self.second_layer_enc = GINEncoder(
+                features=lambda context: self.first_layer_enc(context).t(),
+                query_func=self.first_layer_enc.query,
+                feature_dim=self.feature_dim,
+                intermediate_dim=self.embed_dim,
+                aggregator=SumAggregator(
+                    lambda context: self.first_layer_enc(context).t()
+                ),
+                embed_dim=self.embed_dim,
+                num_sample=self.fanouts[1],
+                base_model=self.first_layer_enc,
+                device_name=self.device_name
+            )
 
-        self.second_layer_enc = GINEncoder(
-            features=lambda context: self.first_layer_enc(context).t(),
-            query_func=self.first_layer_enc.query,
-            feature_dim=self.feature_dim,
-            intermediate_dim=self.embed_dim,
-            aggregator=SumAggregator(
-                lambda context: self.first_layer_enc(context).t()
-            ),
-            embed_dim=self.embed_dim,
-            num_sample=self.fanouts[1],
-            base_model=self.first_layer_enc,
-            device_name=self.device_name
-        )
+            self.third_layer_enc = GINEncoder(
+                features=lambda context: self.second_layer_enc(context).t(),
+                query_func=self.second_layer_enc.query,
+                feature_dim=self.feature_dim,
+                intermediate_dim=self.embed_dim,
+                aggregator=SumAggregator(
+                    lambda context: self.second_layer_enc(context).t()
+                ),
+                embed_dim=self.embed_dim,
+                num_sample=self.fanouts[2],
+                base_model=self.second_layer_enc,
+                device_name=self.device_name
+            )
+        elif encoder=="SAGE":
+            self.first_layer_enc = SageEncoder(
+                features=feature_func,
+                query_func=None,
+                feature_dim=self.feature_dim,
+                intermediate_dim=self.feature_dim,
+                aggregator=SumAggregator(feature_func),
+                embed_dim=self.embed_dim,
+                num_sample=self.fanouts[0],
+                device_name=self.device_name
+            )
 
-        self.third_layer_enc = GINEncoder(
-            features=lambda context: self.second_layer_enc(context).t(),
-            query_func=self.second_layer_enc.query,
-            feature_dim=self.feature_dim,
-            intermediate_dim=self.embed_dim,
-            aggregator=SumAggregator(
-                lambda context: self.second_layer_enc(context).t()
-            ),
-            embed_dim=self.embed_dim,
-            num_sample=self.fanouts[2],
-            base_model=self.second_layer_enc,
-            device_name=self.device_name
-        )
+            self.second_layer_enc = SageEncoder(
+                features=lambda context: self.first_layer_enc(context).t(),
+                query_func=self.first_layer_enc.query,
+                feature_dim=self.feature_dim,
+                intermediate_dim=self.embed_dim,
+                aggregator=SumAggregator(
+                    lambda context: self.first_layer_enc(context).t()
+                ),
+                embed_dim=self.embed_dim,
+                num_sample=self.fanouts[1],
+                base_model=self.first_layer_enc,
+                device_name=self.device_name
+            )
 
+            self.third_layer_enc = SageEncoder(
+                features=lambda context: self.second_layer_enc(context).t(),
+                query_func=self.second_layer_enc.query,
+                feature_dim=self.feature_dim,
+                intermediate_dim=self.embed_dim,
+                aggregator=SumAggregator(
+                    lambda context: self.second_layer_enc(context).t()
+                ),
+                embed_dim=self.embed_dim,
+                num_sample=self.fanouts[2],
+                base_model=self.second_layer_enc,
+                device_name=self.device_name
+            )
+        elif encoder=="SAINT":
+             self.first_layer_enc = SaintEncoder(
+                features=feature_func,
+                query_func=None,
+                feature_dim=self.feature_dim,
+                intermediate_dim=self.feature_dim,
+                aggregator=SumAggregator(feature_func),
+                embed_dim=self.embed_dim,
+                num_sample=self.fanouts[0],
+                device_name=self.device_name
+            )
+             self.second_layer_enc = SaintEncoder(
+                features=lambda context: self.first_layer_enc(context).t(),
+                query_func=self.first_layer_enc.query,
+                feature_dim=self.feature_dim,
+                intermediate_dim=self.embed_dim,
+                aggregator=SumAggregator(
+                    lambda context: self.first_layer_enc(context).t()
+                ),
+                embed_dim=self.embed_dim,
+                num_sample=self.fanouts[1],
+                base_model=self.first_layer_enc,
+                device_name=self.device_name
+            )
+             self.third_layer_enc = SaintEncoder(
+                features=lambda context: self.second_layer_enc(context).t(),
+                query_func=self.second_layer_enc.query,
+                feature_dim=self.feature_dim,
+                intermediate_dim=self.embed_dim,
+                aggregator=SumAggregator(
+                    lambda context: self.second_layer_enc(context).t()
+                ),
+                embed_dim=self.embed_dim,
+                num_sample=self.fanouts[2],
+                base_model=self.second_layer_enc,
+                device_name=self.device_name
+            )
     def encode(self, context):
         embed3 = self.third_layer_enc(context["encoder"])
         embed2 = self.second_layer_enc(context["encoder"]["node_feats"])
