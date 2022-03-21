@@ -24,7 +24,7 @@ def objective(trial):
     # dicti['num_epochs'] = trial.suggest_int(name ='num_epochs',low = 30,high=50, step =10) #2
     dicti['num_HN_epochs'] = trial.suggest_int(name='num_HN_epochs',low = 1, high = 41, step =20)#3
     # dicti['lr'] = trial.suggest_float(name='lr',low=1e-5, high=1e-3, log=True)#3
-    dicti['attention_lr'] = trial.suggest_float(name='attention_lr',low=1e-5, high=1e-3, log=True)#3
+    dicti['attention_lr'] = trial.suggest_categorical(name='attention_lr',[1e-5,1e-4,1e-3,2*1e-3,2*1e-4])#3
     # dicti['dlr_factor'] = trial.suggest_float(name='dlr_factor',low=0.1,high=0.9,step=0.1)#10
     # dicti['mpt'] = trial.suggest_categorical('mpt',[0,1])#2
     # dicti['restrict_edges_num'] =trial.suggest_int('restrict_edges_num',-1,high=10,step =3)#3 # if -1 not restricted
@@ -58,7 +58,7 @@ if __name__ =='__main__':
     wandb_kwargs = {"entity":'skill',"project": "pos-fasttext-sorted-colingdb"}
     wandbc = WeightsAndBiasesCallback(metric_name="recall@5", wandb_kwargs=wandb_kwargs)
     study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=None,callbacks=[wandbc])
+    study.optimize(objective, n_trials=200,callbacks=[wandbc])
 
     print("Number of finished trials: ", len(study.trials))
 
