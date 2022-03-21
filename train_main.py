@@ -39,7 +39,8 @@ torch.cuda.manual_seed_all(22)
 np.random.seed(22)
 
 
-def test(dir,args,params,head_net,RUN_TYPE,node_features,valid_tst_point_features):
+def test(dir,args,params,head_net,RUN_TYPE,node_features,valid_tst_point_features,adjecency_lists,NUM_TRN_POINTS,partition_indices,label_remapping,
+             label_features, tst_X_Y_val, tst_exact_remove, tst_X_Y_trn):
     if(RUN_TYPE == "NR"):
         # introduce the tst points into the graph, assume all tst points known
         # at once. For larger graphs, doing ANNS on trn_points, labels work
@@ -501,7 +502,8 @@ def train_optuna(model_dir):
 
     if(params["num_HN_epochs"] <= 0):
         print("Accuracies with graph embeddings to shortlist:")
-        test(model_dir,args,params,head_net,RUN_TYPE,node_features,valid_tst_point_features)
+        test(model_dir,args,params,head_net,RUN_TYPE,node_features,valid_tst_point_features,adjecency_lists,NUM_TRN_POINTS,partition_indices,label_remapping,
+             label_features, tst_X_Y_val, tst_exact_remove, tst_X_Y_trn)
         sys.exit(
             "You have chosen not to fine tune classifiers using hard negatives by providing num_HN_epochs <= 0")
 
@@ -560,7 +562,8 @@ def train_optuna(model_dir):
     print("==================================================================")
     print("Accuracies with graph embeddings to shortlist:")
     params["num_tst"] = tst_X_Y_val.shape[0]
-    recall_5 = test(model_dir,args,params,head_net,RUN_TYPE,node_features,valid_tst_point_features)
+    recall_5 = test(model_dir,args,params,head_net,RUN_TYPE,node_features,valid_tst_point_features,adjecency_lists,NUM_TRN_POINTS,partition_indices,label_remapping,
+             label_features, tst_X_Y_val, tst_exact_remove, tst_X_Y_trn)
     
     return recall_5
 
@@ -905,7 +908,8 @@ if __name__ == "__main__":
 
     if(params["num_HN_epochs"] <= 0):
         print("Accuracies with graph embeddings to shortlist:")
-        test(model_dir,args,params,head_net,RUN_TYPE,node_features,valid_tst_point_features)
+        test(model_dir,args,params,head_net,RUN_TYPE,node_features,valid_tst_point_features,adjecency_lists,NUM_TRN_POINTS,partition_indices,label_remapping,
+             label_features, tst_X_Y_val, tst_exact_remove, tst_X_Y_trn)
         sys.exit(
             "You have chosen not to fine tune classifiers using hard negatives by providing num_HN_epochs <= 0")
 
@@ -964,5 +968,6 @@ if __name__ == "__main__":
     print("==================================================================")
     print("Accuracies with graph embeddings to shortlist:")
     params["num_tst"] = tst_X_Y_val.shape[0]
-    recall_5 = test(model_dir,args,params,head_net,RUN_TYPE,node_features,valid_tst_point_features)
+    recall_5 = test(model_dir,args,params,head_net,RUN_TYPE,node_features,valid_tst_point_features,adjecency_lists,NUM_TRN_POINTS,partition_indices,label_remapping,
+             label_features, tst_X_Y_val, tst_exact_remove, tst_X_Y_trn)
     
