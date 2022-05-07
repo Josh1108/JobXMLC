@@ -18,7 +18,7 @@
   "fanouts": "5,5,5",
   "num_HN_shortlist": 20,
   "embedding_type": "New-FT-POS",
-  "run_type": "NR",
+  "run_type": "PR",
   "num_validation": 26000,
   "validation_freq": -1,
   "num_shortlist": 1500,

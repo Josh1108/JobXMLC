@@ -732,10 +732,14 @@ if __name__ == "__main__":
 
 
     logger.info("================= STARTING NEW RUN =====================")
-    
+    print("================= STARTING NEW RUN =====================")
+    print()
     logger.info(" ARGUMENTS ")
+    print("ARGUMENTS")
+    print()
     for arg, value in sorted(vars(args).items()):
         logger.info("Argument %s: %r", arg, value)
+        print("Argument %s: %r", arg, value)
     logger.info("=======NUM_PARTITIONS ( GPU's)=================="+ str(NUM_PARTITIONS))
 
 
@@ -802,9 +806,11 @@ if __name__ == "__main__":
             tst_valid_inds[i],
             []) for i in range(
             len(tst_valid_inds))}
-    logger.info("len(tst_exact_remove)", len(tst_exact_remove))
+    
+    print("removed tst as label ==point",tst_exact_remove)
 
-    logger.info("node_features.shape, len(adjecency_lists)",
+
+    print("node_features.shape, len(adjecency_lists)",
           node_features.shape, len(adjecency_lists))
 
     #====================== DEFINING GRAPH ==========================
@@ -819,7 +825,7 @@ if __name__ == "__main__":
         graph,
         NUM_PARTITIONS,
         NUM_TRN_POINTS)
-    logger.info("params= %s", params)
+    print("params= %s", params)
     
 
     #==============================   M1/Phase1 Training(with random negatives) ================
