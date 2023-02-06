@@ -73,7 +73,7 @@ def train(args,params,head_net,head_train_loader,val_data,head_criterion,head_op
         scaler = torch.cuda.amp.GradScaler()
 
     for epoch in range(params["num_epochs"]):
-
+        #print(args,params,head_net,head_train_loader,val_data,head_criterion,head_optimizer)
         epoch_train_start_time = time.time()
         head_net.train()
         torch.set_grad_enabled(True)
@@ -131,7 +131,7 @@ def train(args,params,head_net,head_train_loader,val_data,head_criterion,head_op
 
         if(val_data is not None and ((epoch == 0) or (epoch % args.validation_freq == 0) or (epoch == params["num_epochs"] - 1))):
             val_predicted_labels = lil_matrix(val_data["val_labels"].shape)
-
+            #print("val_predicted_labels.shape",val_predicted_labels.shape)
             t1 = time.time()
             with torch.set_grad_enabled(False):
                 for batch_idx, batch_data in enumerate(val_data["val_loader"]):
@@ -147,10 +147,10 @@ def train(args,params,head_net,head_train_loader,val_data,head_criterion,head_op
                                       partition_length] += partition_indices[i][0]
 
                         update_predicted_shortlist((batch_data["inputs"]) - _start, val_preds,
-                                                   val_predicted_labels, val_short, None, 10)
+                                                   val_predicted_labels, val_short, None, 100)
                     else:
                         update_predicted(batch_data["inputs"] - _start, torch.from_numpy(val_preds),
-                                         val_predicted_labels, None, 10)
+                                         val_predicted_labels, None, 100)
 
             logger.info(
                 "Per point(ms): ",
@@ -366,10 +366,10 @@ def train_optuna(model_dir):
         label_features.shape)
 
     trn_X_Y = data_utils.read_sparse_file(
-        "{}/trn_X_Y.txt".format(DATASET),force_header =True)
+        "{}/trn_X_Y.txt".format(DATASET),force_header =True, zero_based = False)
 
     tst_X_Y = data_utils.read_sparse_file(
-        "{}/tst_X_Y.txt".format(DATASET),force_header=True)
+        "{}/tst_X_Y.txt".format(DATASET),force_header=True, zero_based = False)
 
     tst_valid_inds, trn_X_Y, tst_X_Y_trn, tst_X_Y_val, node_features, valid_tst_point_features, label_remapping, adjecency_lists, NUM_TRN_POINTS = prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label_features,
                                                                                                                                                                 trn_point_titles, tst_point_titles, label_titles, args,logger)
@@ -473,7 +473,7 @@ def train_optuna(model_dir):
         scaler = torch.cuda.amp.GradScaler()
 
     train(args,params,head_net,head_train_loader,val_data,head_criterion,head_optimizer)
-
+    #print("train",args,params,head_net,head_train_loader,val_data,head_criterion,head_optimizer)
     # should be kept as how many we want to test on
     params["num_tst"] = tst_X_Y_val.shape[0]
 
@@ -776,10 +776,10 @@ if __name__ == "__main__":
         label_features.shape)
 
     trn_X_Y = data_utils.read_sparse_file(
-        "{}/trn_X_Y.txt".format(DATASET),force_header =True)
+        "{}/trn_X_Y.txt".format(DATASET),force_header =True,zero_based= False)
 
     tst_X_Y = data_utils.read_sparse_file(
-        "{}/tst_X_Y.txt".format(DATASET),force_header=True)
+        "{}/tst_X_Y.txt".format(DATASET),force_header=True, zero_based = False)
 
     tst_valid_inds, trn_X_Y, tst_X_Y_trn, tst_X_Y_val, node_features, valid_tst_point_features, label_remapping, adjecency_lists, NUM_TRN_POINTS = prepare_data(trn_X_Y, tst_X_Y, trn_point_features, tst_point_features, label_features,
                                                                                                                                                                 trn_point_titles, tst_point_titles, label_titles, args,logger)

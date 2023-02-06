@@ -1,6 +1,6 @@
 """
-Generate trian and test files for galaxc
-Input: train.pkl and test.pkl: [List of tuple of JD, binary vector of skills], Y.txt skill list txt file
+Generate train,val and test files for galaxc
+Input: train.pkl,val.pkl and test.pkl: [List of tuple of JD, binary vector of skills], Y.txt skill list txt file
 """
 
 import pickle
@@ -12,8 +12,8 @@ import os
 
 def save_text(data_path,save_path):
 
-    load_files = ['train.pkl','test.pkl']
-    save_files = ['trn_X_Y.txt','tst_X_Y.txt']
+    load_files = ['train.pkl','val.pkl','test.pkl']
+    save_files = ['trn_X_Y.txt','val_X_Y.txt','tst_X_Y.txt']
 
     for i,file in enumerate(load_files):
         with open(os.path.join(data_path,file), 'rb') as f:
@@ -23,10 +23,11 @@ def save_text(data_path,save_path):
                 f.write(item[0]+'\n')
 
 def csr_format(data_path,save_path):
-    save_files = ['trn_X_Y.txt','tst_X_Y.txt']
-    load_files = ['train.pkl','test.pkl']
+    load_files = ['train.pkl','val.pkl','test.pkl']
+    save_files = ['trn_X_Y.txt','val_X_Y.txt','tst_X_Y.txt']
 
     for i,file in enumerate(load_files):
+        print(os.path.join(data_path,file))
         with open(os.path.join(data_path,file), 'rb') as f:
             df = pickle.load(f)
         
@@ -57,6 +58,6 @@ if '__name__' =='__main__':
     parser.add_argument("--data_path")
     parser.add_argument("--save_path")
     args = parser.parse_args()
-
+    print (args)
+    print("heloooooooooo")
     csr_format(args.data_path,args.save_path)
-

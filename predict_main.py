@@ -41,7 +41,7 @@ def predict(net, pred_batch):
 
 
 def update_predicted(row_indices, predicted_batch_labels,
-                     predicted_labels, remapping, top_k):
+                     predicted_labels, remapping, top_k=100):
     batch_size = row_indices.shape[0]
     top_values, top_indices = predicted_batch_labels.topk(
         k=top_k, dim=1, sorted=False)
@@ -57,11 +57,11 @@ def update_predicted(row_indices, predicted_batch_labels,
 
 
 def update_predicted_shortlist(
-        row_indices, predicted_batch_labels, predicted_labels, shortlist, remapping, top_k=10):
+        row_indices, predicted_batch_labels, predicted_labels, shortlist, remapping, top_k=100):
     if(len(predicted_batch_labels.shape) == 1):
         predicted_batch_labels = predicted_batch_labels[None, :]
     m = predicted_batch_labels.shape[0]
-
+    print("predicted_batch_labels.shape",predicted_batch_labels.shape)
     top_indices = np.argsort(predicted_batch_labels, axis=1)[
         :, ::-1][:, :top_k]
     top_values = predicted_batch_labels[np.arange(m)[:, None], top_indices]
@@ -69,15 +69,17 @@ def update_predicted_shortlist(
     batch_size, shortlist_size = shortlist.shape
     ind = np.zeros((top_k * batch_size, 2), dtype=np.int)
     ind[:, 0] = np.repeat(row_indices, [top_k] * batch_size)
-
+    print(ind.shape,shortlist.shape, top_indices.shape)
     if(remapping is not None):
         ind[:, 1] = [remapping[x]
                      for x in np.ravel(shortlist[np.arange(m)[:, None], top_indices])]
     else:
         ind[:, 1] = [x for x in np.ravel(
             shortlist[np.arange(m)[:, None], top_indices])]
-
+    print(predicted_labels.shape)
+    print("ind",ind)
     predicted_labels[ind[:, 0], ind[:, 1]] = np.ravel(top_values)
+    
 
 
 def run_validation(val_predicted_labels, tst_X_Y_val,
@@ -116,20 +118,22 @@ def run_validation(val_predicted_labels, tst_X_Y_val,
         recall_lis.append(_rec)
         _prec = precision(tst_X_Y_val,_pred,num,dir)
         prec_lis.append(_prec)
+    ndcg, mrr = othermetrics(tst_X_Y_val,_pred)
     
-    return recall_lis,prec_lis
+    return recall_lis,prec_lis,ndcg,mrr
 
 def encode_nodes(net, context):
     net.eval()
     torch.set_grad_enabled(False)
 
-    embed3 = net.third_layer_enc(context["encoder"])
-    embed2 = net.second_layer_enc(context["encoder"]["node_feats"])
-    embed1 = net.first_layer_enc(
-        context["encoder"]["node_feats"]["node_feats"])
+    # embed3 = net.third_layer_enc(context["encoder"])
+    # embed2 = net.second_layer_enc(context["encoder"]["node_feats"])
+    # embed1 = net.first_layer_enc(
+    #     context["encoder"]["node_feats"]["node_feats"])
+    embed1 = net.first_layer_enc(context["encoder"])
 
-#     embed = torch.stack((net.transform1(embed1.t()), net.transform2(embed2.t()), net.transform3(embed3.t())), dim=1)
-    embed = torch.stack((embed1.t(), embed2.t(), embed3.t()), dim=1)
+    # embed = torch.stack((net.transform1(embed1.t()), net.transform2(embed2.t()), net.transform3(embed3.t())), dim=1)
+    embed = torch.stack((net.transform1(embed1.t()), net.transform2(embed1.t()), net.transform3(embed1.t())), dim=1)
     embed = torch.mean(embed, dim=1)
 
     return embed
@@ -261,4 +265,5 @@ def validate(head_net, params, partition_indices, label_remapping,
     ), val_data["val_labels"], tst_exact_remove, tst_X_Y_trn, params["inv_prop"],dir)
     print("acc = {}".format(acc))
     logger.info("Recall: " + ", ".join(str(x) for x in acc[0])+" \nPrecision: "+ ", ".join(str(x) for x in acc[1]))
+    logger.info("MRR: " + str(acc[2])+" \nndcg: "+ ", ".join(str(x) for x in acc[3]))
     return acc[0][0]

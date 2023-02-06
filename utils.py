@@ -124,6 +124,46 @@ def make_csr_from_ll(ll, num_z):
     return csr_matrix((data, indices, indptr), shape=(len(ll), num_z))
 
 
+def mrr(true_labels, pred_labels):
+    true_lbls_t = torch.from_numpy(true_labels.toarray())
+    pred_lbls_t = torch.from_numpy(pred_labels.toarray())
+    return recsys_metrics.mean_reciprocal_rank(true_lbls_t, pred_lbls_t).int()
+
+
+def othermetrics(true_labels, pred_labels):
+    true_lbls_t = true_labels.toarray()
+    pred_lbls_t = pred_labels.toarray()
+    kvals = [5,10,30,50,100]
+    ndcg_k=[]
+    rr = []
+    y_true_list = true_lbls_t
+    y_pred = pred_lbls_t
+    for i in range(0,len(y_true_list)):
+        y_t = y_true_list[i]
+        y_t_len = len(y_t)
+        y_p_index = np.flip(np.argsort(y_pred[i]),0)
+        for i in range(0,len(y_p_index)):
+            if y_p_index[i] in y_t:
+                rr.append(1/float(i+1))
+                break
+        idcg = np.sum([1.0/np.log2(x+2) for x in range(0,y_t_len)])
+        r = []
+        ndcg = []
+        for k in kvals:
+            correct = len(np.intersect1d(y_t,y_p_index[0:k]))
+            r.append(correct/float(y_t_len))
+            dcg = 0
+            for i in range(0,k):
+                if y_p_index[i] in y_t:
+                    dcg = dcg + 1.0/np.log2(i+2)
+            ndcg.append(dcg/idcg)
+        ndcg_k.append(ndcg)
+    print(" mrr = "+str(np.mean(rr)))
+    ndcg = np.mean(ndcg_k,axis=0)*100
+    for i in range(0,len(kvals)):
+        print(" ndcg@"+str(kvals[i])+"= "+str(ndcg[i]))
+    return np.mean(rr), ndcg
+
 # @nb.njit(cache=True)
 def _recall(true_labels_indices, true_labels_indptr,
             pred_labels_data, pred_labels_indices, pred_labels_indptr, k,dir):

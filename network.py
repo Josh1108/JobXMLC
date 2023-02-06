@@ -424,6 +424,7 @@ class LinearDistributed(nn.Module):
         print("Moving to different devices...")
         for i in range(len(self.device_embeddings)):
             self.classifiers[i].move_to_devices()
+            print("classifiers",self.classifiers[i].move_to_devices())
 
     def reset_parameters(self):
         for i in range(len(self.device_embeddings)):
@@ -500,7 +501,7 @@ class GalaXCBase(nn.Module):
         self.classifier = self._construct_classifier()
 
     def query(self, context: dict):
-        context["encoder"] = self.third_layer_enc.query(
+        context["encoder"] = self.first_layer_enc.query(
             context["inputs"],
             self.graph
         )
@@ -530,33 +531,33 @@ class GalaXCBase(nn.Module):
                 device_name=self.device_name
             )
 
-            self.second_layer_enc = GINEncoder(
-                features=lambda context: self.first_layer_enc(context).t(),
-                query_func=self.first_layer_enc.query,
-                feature_dim=self.feature_dim,
-                intermediate_dim=self.embed_dim,
-                aggregator=SumAggregator(
-                    lambda context: self.first_layer_enc(context).t()
-                ),
-                embed_dim=self.embed_dim,
-                num_sample=self.fanouts[1],
-                base_model=self.first_layer_enc,
-                device_name=self.device_name
-            )
+            # self.second_layer_enc = GINEncoder(
+            #     features=lambda context: self.first_layer_enc(context).t(),
+            #     query_func=self.first_layer_enc.query,
+            #     feature_dim=self.feature_dim,
+            #     intermediate_dim=self.embed_dim,
+            #     aggregator=SumAggregator(
+            #         lambda context: self.first_layer_enc(context).t()
+            #     ),
+            #     embed_dim=self.embed_dim,
+            #     num_sample=self.fanouts[1],
+            #     base_model=self.first_layer_enc,
+            #     device_name=self.device_name
+            # )
 
-            self.third_layer_enc = GINEncoder(
-                features=lambda context: self.second_layer_enc(context).t(),
-                query_func=self.second_layer_enc.query,
-                feature_dim=self.feature_dim,
-                intermediate_dim=self.embed_dim,
-                aggregator=SumAggregator(
-                    lambda context: self.second_layer_enc(context).t()
-                ),
-                embed_dim=self.embed_dim,
-                num_sample=self.fanouts[2],
-                base_model=self.second_layer_enc,
-                device_name=self.device_name
-            )
+            # self.third_layer_enc = GINEncoder(
+            #     features=lambda context: self.second_layer_enc(context).t(),
+            #     query_func=self.second_layer_enc.query,
+            #     feature_dim=self.feature_dim,
+            #     intermediate_dim=self.embed_dim,
+            #     aggregator=SumAggregator(
+            #         lambda context: self.second_layer_enc(context).t()
+            #     ),
+            #     embed_dim=self.embed_dim,
+            #     num_sample=self.fanouts[2],
+            #     base_model=self.second_layer_enc,
+            #     device_name=self.device_name
+            # )
         elif encoder=="SAGE":
             self.first_layer_enc = SageEncoder(
                 features=feature_func,
@@ -634,16 +635,21 @@ class GalaXCBase(nn.Module):
                 device_name=self.device_name
             )
     def encode(self, context):
-        embed3 = self.third_layer_enc(context["encoder"])
-        embed2 = self.second_layer_enc(context["encoder"]["node_feats"])
-        embed1 = self.first_layer_enc(
-            context["encoder"]["node_feats"]["node_feats"])
+        # embed3 = self.third_layer_enc(context["encoder"])
+        # embed2 = self.second_layer_enc(context["encoder"]["node_feats"])
+        # print("embedding size",embed3.shape, embed2.shape)
+        # embed1 = self.first_layer_enc(
+        #     context["encoder"]["node_feats"]["node_feats"])
 
-        embed = torch.cat(
-            (self.transform1(
-                embed1.t()), self.transform2(
-                embed2.t()), self.transform3(
-                embed3.t())), dim=1)
+        embed1 = self.first_layer_enc(
+            context["encoder"])
+        # embed = torch.cat(
+        #     (self.transform1(
+        #         embed1.t()), self.transform2(
+        #         embed2.t()), self.transform3(
+        #         embed3.t())), dim=1)
+        # print(embed1.shape)
+        embed = torch.cat((self.transform1(embed1.t()),self.transform2(embed1.t()),self.transform3(embed1.t())),dim=1)
         return embed
 
     def encode_graph_embedding(self, context):
@@ -667,7 +673,7 @@ class GalaXCBase(nn.Module):
         return self.classifier.get_weights()
 
     def move_to_devices(self):
-        self.third_layer_enc.to(self.device_embeddings)
+        self.first_layer_enc.to(self.device_embeddings)
         self.transform1.to(self.device_embeddings)
         self.transform2.to(self.device_embeddings)
         self.transform3.to(self.device_embeddings)
