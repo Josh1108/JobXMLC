@@ -4,6 +4,7 @@ from tqdm import tqdm
 import numpy as np
 import pickle
 from sklearn.feature_extraction.text import TfidfVectorizer
+import os
 
 class initialEmbeddings:
     def __init__(self):
@@ -17,7 +18,7 @@ class initialEmbeddings:
     def save_embeddings(self):
         return NotImplementedError
 
-class hfEmbeddings(initialEmbeddings):
+class SentenceTransformerEmbeddings(initialEmbeddings):
     def __init__(self,args):
         self.args = args
     def word_tokenizer(self, text):
@@ -29,7 +30,7 @@ class hfEmbeddings(initialEmbeddings):
         """
         remove the 10 most unimportant words in a job based on tf-idf scores
         """
-        vectorizer = TfidfVectorizer(tokenizer=word_tokenizer)
+        vectorizer = TfidfVectorizer(tokenizer=self.word_tokenizer)
         X = vectorizer.fit_transform(corpus)
         Y = vectorizer.get_feature_names()
         full_corpus_new = []
@@ -59,20 +60,35 @@ class hfEmbeddings(initialEmbeddings):
         dataset=[x.split('\n')[0] for x in f]
         print("First row of dataset:", dataset[0])
         print("Encoding {} sentences using {}.....\n".format(len(dataset), args.model))
-
-        corpus_embeddings = np.empty((0, 768)) 
-        dataset = preprocess(dataset)
-        for batch in tqdm(np.array_split(dataset, 50)):
+        embedding_size = embedder.get_sentence_embedding_dimension()
+        corpus_embeddings = np.empty((0, embedding_size)) 
+        dataset = self.preprocess(dataset)
+        for batch in tqdm(np.array_split(dataset, self.batch_size)):
             embs = embedder.encode(batch)
             corpus_embeddings = np.vstack((corpus_embeddings, embs))
+        return corpus_embeddings
     
     def save_embeddings(self):
         print("Saving embeddings to file...")
         save_path = args.save_path
 
         np.save("./../dumps/BERTMEAN-{}.npy".format(args.output), corpus_embeddings)
-    def dataset_runner(self):
-        return NotImplementedError
+    
+    def embeddings_runner(self):
+        """
+        run the embeddings pipeline for the dataset"""
+        data_directory_path = self.args.dataset_path
+        train_data_path = os.path.join(data_directory_path,'trn_X.txt')
+        test_data_path = os.path.join(data_directory_path,'tst_X.txt')
+        labels_path = os.path.join(data_directory_path,'Y.txt')
+
+        for data in [train_data_path, test_data_path, labels_path]:
+            if not os.path.exists(data):
+                raise FileNotFoundError("File {} not found".format(data))
+            data_embeddings = self.create_embeddings(data)   
+
+
+
 
 
 if __name__ == '__main__':
