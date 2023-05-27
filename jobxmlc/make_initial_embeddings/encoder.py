@@ -47,7 +47,7 @@ class initialEmbeddings:
 @register(_name="sentence-transformer-encoder", _type=ENCODER)
 class SentenceTransformerEncoder(initialEmbeddings):
     def __init__(self,args):
-        self.args = args
+        self.args = args['params']
     def create_embeddings(self,data):
         model_name = self.args.model
         embedder = SentenceTransformer(model_name)
