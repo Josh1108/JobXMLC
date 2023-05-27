@@ -5,7 +5,7 @@ import numpy as np
 import pickle
 from sklearn.feature_extraction.text import TfidfVectorizer
 import os
-
+from jobxmlc.registry import ENCODER, DATA_FILTER, register
 class initialEmbeddings:
     def __init__(self):
         pass
@@ -18,6 +18,7 @@ class initialEmbeddings:
     def save_embeddings(self):
         return NotImplementedError
 
+@register(_name="sentence-encoder", _type=ENCODER)
 class SentenceTransformerEmbeddings(initialEmbeddings):
     def __init__(self,args):
         self.args = args

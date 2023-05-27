@@ -1,1 +1,1 @@
-## Initial Emneddings
+## Initial Embeddings

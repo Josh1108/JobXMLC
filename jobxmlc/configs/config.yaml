@@ -1,0 +1,7 @@
+encoder:
+  name: bert-base-nli-mean-tokens
+  preprocessing:
+    name: tf-idf
+    params:
+      number_of_words: 10
+  dataset_dir:  ${JOBXMLC_DATA}/dataset
