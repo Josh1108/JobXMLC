@@ -23,6 +23,7 @@ model:
   mpt: 0
   restrict_edges_num: -1
   restrict_edges_head_threshold: 3
+  take_most_frequent_labels: True
   num_random_samples: 4
   random_shuffle_nbrs: 0
   fanouts: 5,5,5

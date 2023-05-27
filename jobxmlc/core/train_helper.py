@@ -2,6 +2,7 @@ import numpy as np
 from xclib.data import data_utils
 from utils import remap_label_indices, make_csr_from_ll
 from scipy.sparse import vstack,lil_matrix
+from scipy.spatial import distance
 def load_txt_file(file_path):
     return [line.strip() for line in open(file_path, "r").readlines()]
 
@@ -156,28 +157,21 @@ def prepare_data(data_dict,args):
 
         NUM_TRN_POINTS = trn_point_features.shape[0] # Size of training data
     
-    # clean till here
 
-    if args.restrict_edges_num >= 3: # if number of neighbours are restricted take frequent labels (args.restrict_edges_head_threshold) in datset and change adjecency lists to reflect
+    if args.restrict_edges_num >= 3: # if number of neighbours are restricted take frequent labels (args.restrict_edges_head_threshold) in dataset and change adjecency lists to reflect
                                       # the neighbour pruning.
 
         head_labels = np.where(np.sum(trn_X_Y.astype(np.bool),axis=0)>args.restrict_edges_head_threshold)[1]
-        # print(trn_X_Y.astype(np.bool))
-        # print("Value",np.sum(trn_X_Y.astype(np.bool),axis=0),np.sum( trn_X_Y.astype(np.bool),axis=0).shape)
-        # print(np.where(np.sum(trn_X_Y.astype(np.bool),axis=0)==0))
-        # print(labels,len(labels))
-        logging.info(
-            "Restricting edges: Number of head labels = {}".format(
-                len(head_labels)))
-        # print(head_labels)
 
         for lbl in head_labels:
             if lbl!=0:
                 continue
             _nid = label_remapping[lbl]
-            print("printing node id", _nid)
             distances = distance.cdist([node_features[_nid]], [node_features[x] for x in adjecency_lists[_nid]], "cosine")[0]
-            sorted_indices = np.argsort(-distances)
+            if args.take_most_frequent_labels:
+                sorted_indices = np.argsort(-distances)
+            else:
+                sorted_indices = np.argsort(-distances)
 
             new_nbrs = []
             for k in range(min(args.restrict_edges_num, len(sorted_indices))):
