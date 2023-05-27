@@ -5,16 +5,21 @@ import numpy as np
 import fasttext
 import os
 from jobxmlc.registry import ENCODER, DATA_FILTER_REGISTRY, register
+
+
 class initialEmbeddings:
     def __init__(self):
         pass
     def tokenizer(self):
         return NotImplementedError
+    
     def create_embeddings(self):
         return NotImplementedError
+    
     def preprocessing_data(self,corpus):
         data_filter = DATA_FILTER_REGISTRY[self.data_filter['name']](self.data_filter['params'])
         data_filter.preprocessing_data(corpus)
+    
     def save_embeddings(self,data_name, data_embeddings):
         print(f"Saving {data_name} embeddings to file...")
         save_path = self.params['embeddings_save_dir']
@@ -42,20 +47,23 @@ class initialEmbeddings:
                 raise FileNotFoundError("File {} not found".format(data_path))
             data = self.load_file(data_path)
             data_embeddings = self.create_embeddings(data)
-            self.save_embeddings(self,data_name, data_embeddings) 
+            self.save_embeddings(data_name, data_embeddings) 
 
 @register(_name="sentence-transformer-encoder", _type=ENCODER)
 class SentenceTransformerEncoder(initialEmbeddings):
-    def __init__(self,params,data_filter):
+    def __init__(self,params,**kwargs):
         self.params = params
-        self.data_filter = data_filter
+        self.data_filter = kwargs.get("data_filter", None)
     def create_embeddings(self,data):
         model_name = self.params['model_name']
         embedder = SentenceTransformer(model_name)
         embedding_size = embedder.get_sentence_embedding_dimension()
         corpus_embeddings = np.empty((0, embedding_size)) 
-        dataset = self.preprocessing_data(data)
-        for batch in tqdm(np.array_split(dataset, self.params.batch_size)):
+        if self.data_filter:
+            dataset = self.preprocessing_data(data)
+        else:
+            dataset = data
+        for batch in tqdm(np.array_split(dataset, self.params['data_split_number'])):
             embs = embedder.encode(batch)
             corpus_embeddings = np.vstack((corpus_embeddings, embs))
         return corpus_embeddings
