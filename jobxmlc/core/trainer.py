@@ -24,6 +24,7 @@ def main():
     args = parser.parse_args()
     exp_params = parse_config(args.config_file)
     make_embeddings(exp_params['encoder'])
+    
 
 
     # model = create_model(exp_params["model"], data.id_2_label)
