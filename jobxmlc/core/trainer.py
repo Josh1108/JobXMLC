@@ -5,6 +5,7 @@ from jobxmlc.registry import ENCODER_REGISTRY, DATA_FILTER_REGISTRY
 from jobxmlc.core.utils import remove_key_from_dict, get_device
 import argparse
 from typing import Dict
+from jobxmlc.core.train_helper import data_loader,prepare_data
 
 def make_embeddings(encoder_parameters: Dict) -> None:
     encoder = ENCODER_REGISTRY[encoder_parameters["name"]](**remove_key_from_dict(encoder_parameters))
@@ -22,7 +23,10 @@ def main():
     parser.add_argument("--config_file", default="config/spr2.yml")
     args = parser.parse_args()
     exp_params = parse_config(args.config_file)
-    make_embeddings(exp_params['encoder'])
+    # make_embeddings(exp_params['encoder'])
+    data_dict = data_loader(exp_params['model']['dataset_path'],exp_params['model']['embedding_path'])
+    prepare_data(data_dict,args=exp_params['model'])
+
 
 
 

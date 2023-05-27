@@ -1,16 +1,16 @@
-encoder:
-  name: sentence-transformer-encoder
-  params:
-    model_name: bert-base-nli-mean-tokens
-    data_split_number: 10
-    dataset_dir: !ENV  ${JOBXMLC_DATA_DIR}/COLING
-    embeddings_save_dir : !ENV ${JOBXMLC_DATA_DIR}/embeddings
+# encoder:
+#   name: sentence-transformer-encoder
+#   params:
+#     model_name: bert-base-nli-mean-tokens
+#     data_split_number: 10
+#     dataset_dir: !ENV  ${JOBXMLC_DATA_DIR}/COLING
+#     embeddings_save_dir : !ENV ${JOBXMLC_DATA_DIR}/embeddings
   # data_filter:
   #   name: tf-idf
   #   params:
   #     number_of_words: 10
 model:
-  dataset_path:
+  dataset_path: !ENV  ${JOBXMLC_DATA_DIR}/COLING
   save_model: 0
   encoder: GIN
   num_epochs: 30
@@ -27,8 +27,8 @@ model:
   random_shuffle_nbrs: 0
   fanouts: 5,5,5
   num_HN_shortlist: 20
-  embedding_type: Stack-
-  run_type: NR
+  embedding_path: !ENV ${JOBXMLC_DATA_DIR}/embeddings
+  run_type: PR
   num_validation: -1
   validation_freq: -1
   num_shortlist: 275
@@ -36,8 +36,8 @@ model:
   predict_ova: 0
   A: 0.6
   B: 2.6
-  name: New-FT-stack-jobs-all-no_sorting
-  reporting:
+  run_name: default
+  # reporting:
   # console:
   #   module: baseline.reporting
   # wandb:
