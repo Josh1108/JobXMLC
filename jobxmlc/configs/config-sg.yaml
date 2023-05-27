@@ -2,8 +2,8 @@ encoder:
   name: sentence-transformer-encoder
   params:
     model_name: bert-base-nli-mean-tokens
-    batch_size: 20
-    dataset_dir: !ENV  ${JOBXMLC_DATA_DIR}/dataset
+    batch_size: 50
+    dataset_dir: !ENV  ${JOBXMLC_DATA_DIR}/COLING
     embeddings_save_dir : !ENV ${JOBXMLC_DATA_DIR}/embeddings
   data_filter:
     name: tf-idf

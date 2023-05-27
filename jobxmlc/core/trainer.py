@@ -1,6 +1,5 @@
 from pyaml_env import parse_config
-# config = BaseConfig(parse_config('/home/jsk/skill-prediction/jobxlmc/jobxmlc/configs/config.yaml'))
-
+from jobxmlc import make_initial_embeddings
 # flake8: noqa
 from jobxmlc.registry import ENCODER_REGISTRY, DATA_FILTER_REGISTRY
 from jobxmlc.core.utils import remove_key_from_dict, get_device
@@ -24,7 +23,7 @@ def main():
     args = parser.parse_args()
     exp_params = parse_config(args.config_file)
     make_embeddings(exp_params['encoder'])
-    
+
 
 
     # model = create_model(exp_params["model"], data.id_2_label)

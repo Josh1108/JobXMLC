@@ -6,8 +6,8 @@ from tqdm import tqdm
 
 @register(_name="tf-idf", _type=DATA_FILTER)
 class tfidf10:
-    def __init__(self,args):
-        self.args = args
+    def __init__(self,params):
+        self.number_of_words = params['number_of_words']
     def word_tokenizer(self, text):
         """
         tokenize a sentence into words
@@ -27,7 +27,7 @@ class tfidf10:
             for text in corpus[i].split():
                 lisi.append(dicti[text])
             lisi_index = sorted(range(len(lisi)), key=lambda k: lisi[k])
-            lisi_index=lisi_index[:self.args.number_of_words]
+            lisi_index=lisi_index[:self.number_of_words]
             corpus_split = corpus[i].split()
             corpus_split_pre = []
 
