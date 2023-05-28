@@ -28,7 +28,8 @@ def main():
     data_dict = data_loader(exp_params['model']['dataset_path'],exp_params['model']['embedding_path'])
     tst_valid_inds, trn_X_Y, tst_X_Y_trn, tst_X_Y_val, node_features, valid_tst_point_features, label_remapping, adjecency_lists, NUM_TRN_POINTS = prepare_data(data_dict,args=exp_params['model'])
     hard_negs = [[] for i in range(node_features.shape[0])]
-    graph = Graph(node_features, adjecency_lists, args.random_shuffle_nbrs)
+    TST_TAKE = exp_params['model']['num_validation']
+    graph = Graph(node_features, adjecency_lists, exp_params['model']['random_shuffle_nbrs'])
     params = create_params_dict(
         exp_params['model'],
         node_features,

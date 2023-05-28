@@ -2,6 +2,9 @@ import torch
 from typing import Dict
 from scipy.sparse import csr_matrix
 import xclib.evaluation.xc_metrics as xc_metrics
+import time
+from jobxmlc.core.data import DatasetGraphPrediction, GraphCollator
+from jobxmlc.core.network import HNSW
 def get_device():
     if torch.cuda.is_available():
         return "cuda:0"
@@ -79,7 +82,7 @@ def create_params_dict(args, node_features, trn_X_Y,
 
 
 def create_validation_data(valid_tst_point_features, label_features, tst_X_Y_val,
-                           args, params, TST_TAKE, NUM_PARTITIONS,partition_indices,head_net):
+                           params, TST_TAKE, head_net):
     """
     Create validation data. For val accuracy pattern observation
     This won't provide correct valdation picture as init(not graph) embeddings used and tst connection not added
@@ -87,9 +90,8 @@ def create_validation_data(valid_tst_point_features, label_features, tst_X_Y_val
     if TST_TAKE == -1 :
         TST_TAKE = valid_tst_point_features.shape[0]
 
-    if args.validation_freq != -1 and args.predict_ova == 0 :
+    if params['validation_freq'] != -1 and params['predict_ova'] == 0 :
         print("Creating shortlists for validation using base embeddings...")
-        prediction_shortlists = []
         t1 = time.time()
 
         NGS = HNSW(
@@ -101,20 +103,16 @@ def create_validation_data(valid_tst_point_features, label_features, tst_X_Y_val
 
         prediction_shortlist, _ = NGS.predict(
             valid_tst_point_features[:TST_TAKE], params["num_shortlist"])
-        prediction_shortlists.append(prediction_shortlist)
-
-        prediction_shortlist = prediction_shortlists[0]
-        del(prediction_shortlists)
         print("prediction_shortlist.shape", prediction_shortlist.shape)
         print("Time taken in creating shortlists per point(ms)",
               ((time.time() - t1) / prediction_shortlist.shape[0]) * 1000)
 
-    if args.validation_freq != -1:
+    if params['validation_freq'] != -1:
         _start = params["num_trn"]
         _end = _start + TST_TAKE
         print("_start, _end = ", _start, _end)
 
-        if(args.predict_ova == 0):
+        if params['predict_ova'] == 0 :
             val_dataset = DatasetGraphPrediction(
                 _start, _end, prediction_shortlist)
         else:
