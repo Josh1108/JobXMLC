@@ -1,8 +1,11 @@
 import numpy as np
 from xclib.data import data_utils
-from utils import remap_label_indices, make_csr_from_ll
+from jobxmlc.core.utils import remap_label_indices, make_csr_from_ll,create_validation_data
+from jobxmlc.core.network import GalaXCBase
 from scipy.sparse import vstack,lil_matrix
 from scipy.spatial import distance
+import torch
+
 def load_txt_file(file_path):
     return [line.strip() for line in open(file_path, "r").readlines()]
 
@@ -23,7 +26,56 @@ def data_loader(dataset_path,embedding_path):
     data_dict = {"trn_point_titles":trn_point_titles,"tst_point_titles":tst_point_titles,"label_titles":label_titles,"trn_point_features":trn_point_features,"tst_point_features":tst_point_features,"label_features":label_features,"trn_X_Y":trn_X_Y,"tst_X_Y":tst_X_Y}
     return data_dict
 
+def training_first_phase(params,trn_X_Y):
+    head_net = GalaXCBase(params["num_labels"], params["hidden_dims"], params["devices"],
+                          params["feature_dim"], params["fanouts"], params["graph"], params["embed_dims"],params.encoder)
 
+    head_optimizer = torch.optim.Adam([{'params': [head_net.classifier.classifiers[0].attention_weights], 'lr': params["attention_lr"]},
+                                      {"params": [param for name, param in head_net.named_parameters() if name != "classifier.classifiers.0.attention_weights"], "lr": params["lr"]}], lr=params["lr"])
+
+    partition_indices = [(0,trn_X_Y.shape[1])]
+
+    val_data = create_validation_data(valid_tst_point_features, label_features, tst_X_Y_val,
+                                      args, params, TST_TAKE, partition_indices,head_net)
+
+
+
+    # training loop
+
+
+    head_criterion = torch.nn.BCEWithLogitsLoss(reduction=params["reduction"])
+
+
+    head_train_dataset = DatasetGraph(trn_X_Y, hard_negs) # Right now hard_negs are empty
+
+
+    hc = GraphCollator(
+        head_net,
+        params["num_labels"],
+        params["num_random_samples"],
+        num_hard_neg=0)
+
+
+    head_train_loader = torch.utils.data.DataLoader(
+        head_train_dataset,
+        batch_size=params["batch_size"],
+        num_workers=10,
+        collate_fn=hc,
+        shuffle=True,
+        pin_memory=False
+    )
+
+    inv_prop = xc_metrics.compute_inv_propesity(trn_X_Y, args.A, args.B)
+
+    head_net.move_to_devices()
+
+    if(args.mpt == 1):
+        scaler = torch.cuda.amp.GradScaler()
+
+    train(args,params,head_net,head_train_loader,val_data,head_criterion,head_optimizer)
+    #print("train",args,params,head_net,head_train_loader,val_data,head_criterion,head_optimizer)
+    # should be kept as how many we want to test on
+    params["num_tst"] = tst_X_Y_val.shape[0]
 def prepare_test_data_PR(tst_X_Y, tst_point_features):
     """
     Prepare test data for Partial reveal task in prediciton. We reveal some data during training and some during testing.

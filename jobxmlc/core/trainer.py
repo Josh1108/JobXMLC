@@ -2,10 +2,10 @@ from pyaml_env import parse_config
 from jobxmlc import make_initial_embeddings
 # flake8: noqa
 from jobxmlc.registry import ENCODER_REGISTRY, DATA_FILTER_REGISTRY
-from jobxmlc.core.utils import remove_key_from_dict, get_device
+from jobxmlc.core.utils import remove_key_from_dict, get_device,create_params_dict
 import argparse
 from typing import Dict
-from jobxmlc.core.train_helper import data_loader,prepare_data
+from jobxmlc.core.train_helper import data_loader,prepare_data,training_first_phase
 from jobxlmc.core.data import Graph
 
 def make_embeddings(encoder_parameters: Dict) -> None:
@@ -29,23 +29,13 @@ def main():
     tst_valid_inds, trn_X_Y, tst_X_Y_trn, tst_X_Y_val, node_features, valid_tst_point_features, label_remapping, adjecency_lists, NUM_TRN_POINTS = prepare_data(data_dict,args=exp_params['model'])
     hard_negs = [[] for i in range(node_features.shape[0])]
     graph = Graph(node_features, adjecency_lists, args.random_shuffle_nbrs)
-
-
-
-    # model = create_model(exp_params["model"], data.id_2_label)
-    # print(get_device())
-    # if get_device().startswith("cuda"):
-    #     model.cuda(get_device())
-    # print("model loaded, loading reporters")
-
-    # reporters = create_reporters(exp_params["reporting"], config_file=args.config_file)
-    # print("reporters loaded, training")
-
-    # train_params = exp_params["train"]
-    # train_params["reporting"] = [x.step for x in reporters]
-    # fit(model, ts=data.train, vs=data.dev, es=data.test["no_filter"], **train_params)
-    # for reporter in reporters:
-    #     reporter.done()
+    params = create_params_dict(
+        exp_params['model'],
+        node_features,
+        trn_X_Y,
+        graph,
+        NUM_TRN_POINTS)
+    training_first_phase(params,trn_X_Y)
 
 
 if __name__ == "__main__":

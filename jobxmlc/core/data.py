@@ -15,9 +15,6 @@ import sys
 from scipy.sparse import csr_matrix, lil_matrix, load_npz, hstack, vstack
 from typing import Tuple
 from torch.utils.data import IterableDataset, DataLoader
-import logging
-
-logger = logging.getLogger("main_logger")
 
 class Graph():
     def __init__(self, feat_data, adj_lists, random_shuffle_nbrs):
