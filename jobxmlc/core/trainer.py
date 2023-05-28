@@ -6,6 +6,7 @@ from jobxmlc.core.utils import remove_key_from_dict, get_device
 import argparse
 from typing import Dict
 from jobxmlc.core.train_helper import data_loader,prepare_data
+from jobxlmc.core.data import Graph
 
 def make_embeddings(encoder_parameters: Dict) -> None:
     encoder = ENCODER_REGISTRY[encoder_parameters["name"]](**remove_key_from_dict(encoder_parameters))
@@ -25,8 +26,9 @@ def main():
     exp_params = parse_config(args.config_file)
     # make_embeddings(exp_params['encoder'])
     data_dict = data_loader(exp_params['model']['dataset_path'],exp_params['model']['embedding_path'])
-    prepare_data(data_dict,args=exp_params['model'])
-
+    tst_valid_inds, trn_X_Y, tst_X_Y_trn, tst_X_Y_val, node_features, valid_tst_point_features, label_remapping, adjecency_lists, NUM_TRN_POINTS = prepare_data(data_dict,args=exp_params['model'])
+    hard_negs = [[] for i in range(node_features.shape[0])]
+    graph = Graph(node_features, adjecency_lists, args.random_shuffle_nbrs)
 
 
 
