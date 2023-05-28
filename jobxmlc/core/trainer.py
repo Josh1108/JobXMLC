@@ -6,7 +6,7 @@ from jobxmlc.core.utils import remove_key_from_dict, get_device,create_params_di
 import argparse
 from typing import Dict
 from jobxmlc.core.train_helper import data_loader,prepare_data,trn_frst_prep,train
-from jobxlmc.core.data import Graph
+from jobxmlc.core.data import Graph
 
 
 def make_embeddings(encoder_parameters: Dict) -> None:

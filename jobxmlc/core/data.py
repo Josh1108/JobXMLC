@@ -16,26 +16,28 @@ from scipy.sparse import csr_matrix, lil_matrix, load_npz, hstack, vstack
 from typing import Tuple
 from torch.utils.data import IterableDataset, DataLoader
 
+
 class Graph():
     def __init__(self, feat_data, adj_lists, random_shuffle_nbrs):
         self.feat_data = feat_data
         self.adj_lists = adj_lists
         self.random_shuffle_nbrs = random_shuffle_nbrs
-    
+
     def read_skills(self, path):
         skill_list = []
         with open(path, 'r') as f:
             for line in f.readlines():
-                skill = line.replace('\n','')
+                skill = line.replace('\n', '')
                 skill_list.append(skill)
         return skill_list
-    def read_freq_skills(self,path):
+
+    def read_freq_skills(self, path):
         skill_list = []
-        with open(path,'r') as f:
+        with open(path, 'r') as f:
             for line in f.readlines():
-                skill,freq = line.replace('\n','').split(',')
+                skill, freq = line.replace('\n', '').split(',')
                 skill_list.append(skill)
-        return skill_list[1:] # first one is column name
+        return skill_list[1:]  # first one is column name
 
     def sample_neighbors(
         self,
@@ -50,7 +52,7 @@ class Graph():
         res = np.empty((len(nodes), count), dtype=np.int64)
 
         for i in range(len(nodes)):
-            universe = np.array(self.adj_lists[nodes[i]], dtype=np.int64)   
+            universe = np.array(self.adj_lists[nodes[i]], dtype=np.int64)
             if self.random_shuffle_nbrs == 1:
                 np.random.shuffle(universe)
 
@@ -134,11 +136,11 @@ class GraphCollator():
             context["Y"] = torch.from_numpy(batch_Y)
             context["label_ids"] = torch.tensor(label_ids)
         else:
-            if not(batch[0][1] is None) :  # prediction
-                if len(batch[0]) == 2 :  # shortlist per point
+            if not(batch[0][1] is None):  # prediction
+                if len(batch[0]) == 2:  # shortlist per point
                     context["label_ids"] = torch.LongTensor(
                         [b[1] for b in batch])
-                elif len(batch[0]) == 3 :  # OvA
+                elif len(batch[0]) == 3:  # OvA
                     context["label_ids"] = None
             else:  # embeddings calc
                 context["indices"] = np.array(

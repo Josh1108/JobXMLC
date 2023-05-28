@@ -2,7 +2,7 @@ import numpy as np
 from xclib.data import data_utils
 from jobxmlc.core.utils import remap_label_indices, make_csr_from_ll,create_validation_data
 from jobxmlc.core.network import GalaXCBase
-from jobxlmc.core.data import DatasetGraph, GraphCollator
+from jobxmlc.core.data import DatasetGraph, GraphCollator
 from jobxmlc.core.predict_main import predict,update_predicted,update_predicted_shortlist,run_validation
 from scipy.sparse import vstack,lil_matrix
 from scipy.spatial import distance

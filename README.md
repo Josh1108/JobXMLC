@@ -10,8 +10,8 @@ The relevant files are in `make_initial_embeddings`
 ## Setup
 Add these to your bashrc file:
 
-`export PYTHONPATH=/home/jsk/skill-prediction/jobxlmc:$PYTHONPATH
-export JOBXMLC_DATA=/home/jsk/skill-prediction/data`
+`export PYTHONPATH=/home/jsk/skill-prediction/jobxlmc:$PYTHONPATH`
+`export JOBXMLC_DATA=/home/jsk/skill-prediction/data`
 
 ## Dataset
 The dataset should be present in `dataset/`, e.g. the stackoverflow dataset is present as `dataset/stackoverflow` with the following files:
