@@ -50,12 +50,13 @@ def make_csr_from_ll(ll, num_z):
 def create_params_dict(args, node_features, trn_X_Y,
                        graph, NUM_PARTITIONS, NUM_TRN_POINTS):
     DIM = node_features.shape[1]
-    params = dict(hidden_dims=DIM,
+    params = {**args}
+    params.update(dict(hidden_dims=DIM,
                   feature_dim=DIM,
                   embed_dims=DIM,
                   lr=args.lr,
                   attention_lr=args.attention_lr
-                  )
+                  ))
     params["batch_size"] = args.batch_size
     params["reduction"] = "mean"
     params["batch_div"] = False

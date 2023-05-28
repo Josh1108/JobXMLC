@@ -3,9 +3,12 @@ from xclib.data import data_utils
 from jobxmlc.core.utils import remap_label_indices, make_csr_from_ll,create_validation_data
 from jobxmlc.core.network import GalaXCBase
 from jobxlmc.core.data import DatasetGraph, GraphCollator
+from jobxmlc.core.predict_main import predict,update_predicted,update_predicted_shortlist,run_validation
 from scipy.sparse import vstack,lil_matrix
 from scipy.spatial import distance
+import xclib.evaluation.xc_metrics as xc_metrics
 import torch
+import time
 
 def load_txt_file(file_path):
     return [line.strip() for line in open(file_path, "r").readlines()]
@@ -27,7 +30,7 @@ def data_loader(dataset_path,embedding_path):
     data_dict = {"trn_point_titles":trn_point_titles,"tst_point_titles":tst_point_titles,"label_titles":label_titles,"trn_point_features":trn_point_features,"tst_point_features":tst_point_features,"label_features":label_features,"trn_X_Y":trn_X_Y,"tst_X_Y":tst_X_Y}
     return data_dict
 
-def training_first_phase(params,trn_X_Y, valid_tst_point_features, label_features, tst_X_Y_val, TST_TAKE, hard_negs):
+def trn_frst_prep(params,trn_X_Y, valid_tst_point_features, label_features, tst_X_Y_val, TST_TAKE, hard_negs):
     head_net = GalaXCBase(params["num_labels"], params["hidden_dims"], params["devices"],
                           params["feature_dim"], params["fanouts"], params["graph"], params["embed_dims"],params.encoder)
 
@@ -58,19 +61,86 @@ def training_first_phase(params,trn_X_Y, valid_tst_point_features, label_feature
         pin_memory=False
     )
 
-    inv_prop = xc_metrics.compute_inv_propesity(trn_X_Y, args.A, args.B)
-
     head_net.move_to_devices()
+    inv_prop = xc_metrics.compute_inv_propesity(trn_X_Y, params['A'], params['B'])
+    return head_net, head_train_loader, val_data, head_criterion, head_optimizer,inv_prop
+    
 
-    if(args.mpt == 1):
+def train(params,head_net,head_train_loader,head_criterion,head_optimizer,inv_prop,val_data,tst_X_Y_trn):
+    if params['mpt'] == 1 :
         scaler = torch.cuda.amp.GradScaler()
 
-    train(args,params,head_net,head_train_loader,val_data,head_criterion,head_optimizer)
-    #print("train",args,params,head_net,head_train_loader,val_data,head_criterion,head_optimizer)
-    # should be kept as how many we want to test on
-    params["num_tst"] = tst_X_Y_val.shape[0]
+    for epoch in range(params["num_epochs"]):
 
+        epoch_train_start_time = time.time()
+        head_net.train()
+        torch.set_grad_enabled(True)
 
+        mean_loss = 0
+        for batch_idx, batch_data in enumerate(head_train_loader):
+            t1 = time.time()
+            head_net.zero_grad()
+            batch_size = batch_data['batch_size']
+
+            if params['mpt'] == 1:
+                with torch.cuda.amp.autocast():
+                    out_ans = head_net.forward(batch_data)
+                    loss = head_criterion(
+                        out_ans, batch_data["Y"].to(
+                            out_ans.get_device()))
+            elif params['mpt'] == 0 :
+                out_ans = head_net.forward(batch_data)
+                loss = head_criterion(
+                    out_ans, batch_data["Y"].to(
+                        out_ans.get_device()))
+
+            if params["batch_div"]:
+                loss = loss / batch_size
+            mean_loss += loss.item() * batch_size
+
+            if params['mpt'] == 1:
+                scaler.scale(loss).backward()  # loss.backward()
+                scaler.step(head_optimizer)  # head_optimizer3.step()
+                scaler.update()
+            elif params['mpt'] == 0:
+                loss.backward()
+                head_optimizer.step()
+            del batch_data
+
+        epoch_train_end_time = time.time()
+        mean_loss /= len(head_train_loader.dataset)
+        print(
+            "Epoch: {}, loss: {}, time: {} sec".format(
+                epoch,
+                mean_loss,
+                epoch_train_end_time -
+                epoch_train_start_time))
+        if epoch in params["adjust_lr_epochs"]:
+            for param_group in head_optimizer.param_groups:
+                param_group['lr'] = param_group['lr'] * params["dlr_factor"]
+
+        if val_data is not None and ((epoch == 0) or (epoch % params['validation_freq'] == 0) or (epoch == params["num_epochs"] - 1)) :
+            val_predicted_labels = lil_matrix(val_data["val_labels"].shape)
+
+            t1 = time.time()
+            with torch.set_grad_enabled(False):
+                for batch_idx, batch_data in enumerate(val_data["val_loader"]):
+                    val_preds, val_short = predict(head_net, batch_data)
+
+                    if not(val_short is None) :
+                        partition_length = val_short.shape[1]
+                        update_predicted_shortlist((batch_data["inputs"]), val_preds,
+                                                   val_predicted_labels, val_short, None, 10)
+                    else:
+                        update_predicted(batch_data["inputs"], torch.from_numpy(val_preds),
+                                         val_predicted_labels, None, 10)
+
+            print(
+                "Per point(ms): ",
+                ((time.time() - t1) / val_predicted_labels.shape[0]) * 1000)
+            acc, _ = run_validation(val_predicted_labels.tocsr(
+            ), val_data["val_labels"], {}, tst_X_Y_trn, inv_prop)
+            print("acc = {}".format(acc))
 
 def prepare_test_data_PR(tst_X_Y, tst_point_features):
     """

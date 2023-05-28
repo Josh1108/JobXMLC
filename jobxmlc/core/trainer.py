@@ -5,8 +5,9 @@ from jobxmlc.registry import ENCODER_REGISTRY, DATA_FILTER_REGISTRY
 from jobxmlc.core.utils import remove_key_from_dict, get_device,create_params_dict
 import argparse
 from typing import Dict
-from jobxmlc.core.train_helper import data_loader,prepare_data,training_first_phase
+from jobxmlc.core.train_helper import data_loader,prepare_data,trn_frst_prep,train
 from jobxlmc.core.data import Graph
+
 
 def make_embeddings(encoder_parameters: Dict) -> None:
     encoder = ENCODER_REGISTRY[encoder_parameters["name"]](**remove_key_from_dict(encoder_parameters))
@@ -36,7 +37,31 @@ def main():
         trn_X_Y,
         graph,
         NUM_TRN_POINTS)
-    training_first_phase(params,trn_X_Y)
+    
+    head_net, head_train_loader, val_data, head_criterion, head_optimizer,inv_prop = trn_frst_prep(params,trn_X_Y, valid_tst_point_features, data_dict['label_features'], tst_X_Y_val, TST_TAKE, hard_negs)
+    
+    train(params,head_net,head_train_loader,head_criterion,head_optimizer,inv_prop,val_data,tst_X_Y_trn)
+    params["num_tst"] = tst_X_Y_val.shape[0]
+
+    # if(args.save_model == 1):
+    #     model_dir = "{}/GraphXMLModel{}".format(DATASET, RUN_TYPE)
+    #     if not os.path.exists(model_dir):
+    #         print("Making model dir...")
+    #         os.makedirs(model_dir)
+
+    #     torch.save(
+    #         head_net.state_dict(),
+    #         os.path.join(
+    #             model_dir,
+    #             "model_state_dict.pt"))
+    #     with open(os.path.join(model_dir, "model_params.pkl"), "wb") as fout:
+    #         pickle.dump(params, fout, protocol=4)
+
+    # if(params["num_HN_epochs"] <= 0):
+    #     print("Accuracies with graph embeddings to shortlist:")
+    #     test()
+    #     sys.exit(
+    #         "You have chosen not to fine tune classifiers using hard negatives by providing num_HN_epochs <= 0")
 
 
 if __name__ == "__main__":
