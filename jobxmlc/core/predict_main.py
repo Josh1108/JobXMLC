@@ -23,7 +23,7 @@ import xclib.evaluation.xc_metrics as xc_metrics
 
 from data import *
 from utils import *
-from network import HNSW
+from jobxmlc.core.network import HNSW
 
 
 def predict(net, pred_batch):
@@ -264,6 +264,4 @@ def validate(head_net, params, partition_indices, label_remapping,
     acc = run_validation(val_predicted_labels.tocsr(
     ), val_data["val_labels"], tst_exact_remove, tst_X_Y_trn, params["inv_prop"],dir)
     print("acc = {}".format(acc))
-    logger.info("Recall: " + ", ".join(str(x) for x in acc[0])+" \nPrecision: "+ ", ".join(str(x) for x in acc[1]))
-    logger.info("MRR: " + str(acc[2])+" \nndcg: "+ ", ".join(str(x) for x in acc[3]))
     return acc[0][0]
