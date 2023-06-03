@@ -97,11 +97,11 @@ def main():
         pin_memory=True
     )
 
-    inv_prop = xc_metrics.compute_inv_propesity(trn_X_Y, args.A, args.B)
+    inv_prop = xc_metrics.compute_inv_propesity(trn_X_Y, params['A'], params['B'])
 
     head_net.move_to_devices()
 
-    if args.mpt == 1:
+    if params['mpt'] == 1:
         scaler = torch.cuda.amp.GradScaler()
 
     params["adjust_lr_epochs"] = np.arange(0, params["num_HN_epochs"], 4) # when to adjust lr

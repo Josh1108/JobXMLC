@@ -13,10 +13,10 @@ model:
   run_name: testing
   dataset_path: !ENV ${JOBXMLC_DATA_DIR}/COLING
   embedding_path: !ENV ${JOBXMLC_DATA_DIR}/embeddings
-  model_path: !ENV ${JOBXMLC_DATA_DIR}/models
+  model_save_dir: !ENV ${JOBXMLC_DATA_DIR}/models
   save_model: True
   encoder: GIN
-  num_epochs: 30
+  num_epochs: 1
   num_HN_epochs: 20
   batch_size: 256
   lr: 0.0003
