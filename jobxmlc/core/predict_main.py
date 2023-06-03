@@ -10,7 +10,7 @@ import torch.utils.data
 import numpy as np
 import time
 from scipy.sparse import csr_matrix, lil_matrix
-from jobxmlc.core.utils import recall, precision, othermetrics
+from jobxmlc.core.metrics import recall, precision, othermetrics
 from jobxmlc.core.network import HNSW
 from jobxmlc.core.data import DatasetGraphPredictionEncode, GraphCollator, DatasetGraphPrediction
 

@@ -1,17 +1,18 @@
 import nmslib
 from typing import Callable
-import logging
 import torch
 import numpy as np
 import math
-from scipy.sparse import csr_matrix, lil_matrix
-from jobxmlc.core.utils import get_device
 import torch.nn as nn
 from torch.nn.parameter import Parameter
 import torch.nn.functional as F
 import torch.utils.data
 import logging
 
+def get_device():
+    if torch.cuda.is_available():
+        return "cuda:0"
+    return "cpu"
 
 class MeanAggregator(nn.Module):
     """Aggregates a node's embeddings using mean of neighbors' embeddings."""
