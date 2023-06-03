@@ -105,11 +105,6 @@ def run_validation(val_predicted_labels, tst_X_Y_val,
     _pred = csr_matrix(
         (data, indices, indptr), shape=(
             val_predicted_labels.shape))
-
-
-    print()
-    # acc = xc_metrics.Metrics(tst_X_Y_val, inv_psp=inv_prop)
-    # acc = acc.eval(_pred, 5)
     recall_lis =[]
     prec_lis =[]
     

@@ -30,6 +30,7 @@ def data_loader(dataset_path,embedding_path):
     data_dict = {"trn_point_titles":trn_point_titles,"tst_point_titles":tst_point_titles,"label_titles":label_titles,"trn_point_features":trn_point_features,"tst_point_features":tst_point_features,"label_features":label_features,"trn_X_Y":trn_X_Y,"tst_X_Y":tst_X_Y}
     return data_dict
 
+
 def trn_frst_prep(params,trn_X_Y, valid_tst_point_features, label_features, tst_X_Y_val, TST_TAKE, hard_negs):
     head_net = GalaXCBase(params["num_labels"], params["hidden_dims"], params["devices"],
                           params["feature_dim"], params["fanouts"], params["graph"], params["embed_dims"],params.encoder)
@@ -67,6 +68,7 @@ def trn_frst_prep(params,trn_X_Y, valid_tst_point_features, label_features, tst_
     
 
 def train(params,head_net,head_train_loader,head_criterion,head_optimizer,inv_prop,val_data,tst_X_Y_trn):
+    
     if params['mpt'] == 1 :
         scaler = torch.cuda.amp.GradScaler()
 
@@ -138,9 +140,10 @@ def train(params,head_net,head_train_loader,head_criterion,head_optimizer,inv_pr
             print(
                 "Per point(ms): ",
                 ((time.time() - t1) / val_predicted_labels.shape[0]) * 1000)
-            acc, _ = run_validation(val_predicted_labels.tocsr(
+            recall_lis,prec_lis,ndcg,mrr = run_validation(val_predicted_labels.tocsr(
             ), val_data["val_labels"], {}, tst_X_Y_trn, inv_prop)
-            print("acc = {}".format(acc))
+
+            print("\nrecall_metrics\n",recall_lis,"\nprec_metrics\n",prec_lis,"\nndcg",ndcg,"\nmrr",mrr)
 
 def prepare_test_data_PR(tst_X_Y, tst_point_features):
     """
