@@ -50,7 +50,6 @@ def update_predicted_shortlist(
     if(len(predicted_batch_labels.shape) == 1):
         predicted_batch_labels = predicted_batch_labels[None, :]
     m = predicted_batch_labels.shape[0]
-    print("predicted_batch_labels.shape",predicted_batch_labels.shape)
     top_indices = np.argsort(predicted_batch_labels, axis=1)[
         :, ::-1][:, :top_k]
     top_values = predicted_batch_labels[np.arange(m)[:, None], top_indices]
@@ -58,15 +57,12 @@ def update_predicted_shortlist(
     batch_size, shortlist_size = shortlist.shape
     ind = np.zeros((top_k * batch_size, 2), dtype=np.int)
     ind[:, 0] = np.repeat(row_indices, [top_k] * batch_size)
-    print(ind.shape,shortlist.shape, top_indices.shape)
     if(remapping is not None):
         ind[:, 1] = [remapping[x]
                      for x in np.ravel(shortlist[np.arange(m)[:, None], top_indices])]
     else:
         ind[:, 1] = [x for x in np.ravel(
             shortlist[np.arange(m)[:, None], top_indices])]
-    print(predicted_labels.shape)
-    print("ind",ind)
     predicted_labels[ind[:, 0], ind[:, 1]] = np.ravel(top_values)
     
 
@@ -97,9 +93,9 @@ def run_validation(val_predicted_labels, tst_X_Y_val, tst_X_Y_trn, inv_prop,dir)
     prec_lis =[]
     
     for num in [5,10,20,30,50,100]:
-        _rec = recall(tst_X_Y_val, _pred, num,dir)
+        _rec = recall(tst_X_Y_val, _pred, num)
         recall_lis.append(_rec)
-        _prec = precision(tst_X_Y_val,_pred,num,dir)
+        _prec = precision(tst_X_Y_val,_pred,num)
         prec_lis.append(_prec)
     ndcg, mrr = othermetrics(tst_X_Y_val,_pred)
     

@@ -17,7 +17,7 @@ model:
   save_model: True
   encoder: GIN
   num_epochs: 1
-  num_HN_epochs: 20
+  num_HN_epochs: 1
   batch_size: 256
   lr: 0.0003
   attention_lr: 0.0003
