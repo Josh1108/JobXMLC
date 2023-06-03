@@ -1,9 +1,9 @@
 import numpy as np
 from xclib.data import data_utils
-from jobxmlc.core.utils import remap_label_indices, make_csr_from_ll,create_validation_data
+from jobxmlc.core.utils import remap_label_indices, make_csr_from_ll,create_validation_data, sample_anns_nbrs
 from jobxmlc.core.network import GalaXCBase
-from jobxmlc.core.data import DatasetGraph, GraphCollator
-from jobxmlc.core.predict_main import predict,update_predicted,update_predicted_shortlist,run_validation
+from jobxmlc.core.data import DatasetGraph, GraphCollator,Graph
+from jobxmlc.core.predict_main import predict,update_predicted,update_predicted_shortlist,run_validation, validate
 from scipy.sparse import vstack,lil_matrix
 from scipy.spatial import distance
 import xclib.evaluation.xc_metrics as xc_metrics
@@ -32,8 +32,7 @@ def data_loader(dataset_path,embedding_path):
 
 
 def trn_frst_prep(params,trn_X_Y, valid_tst_point_features, label_features, tst_X_Y_val, TST_TAKE, hard_negs):
-    head_net = GalaXCBase(params["num_labels"], params["hidden_dims"], params["devices"],
-                          params["feature_dim"], params["fanouts"], params["graph"], params["embed_dims"],params.encoder)
+    head_net = GalaXCBase(params["num_labels"], params["hidden_dims"], params["feature_dim"], params["fanouts"], params["graph"], params["embed_dims"],params.encoder)
 
     head_optimizer = torch.optim.Adam([{'params': [head_net.classifier.classifiers[0].attention_weights], 'lr': params["attention_lr"]},
                                       {"params": [param for name, param in head_net.named_parameters() if name != "classifier.classifiers.0.attention_weights"], "lr": params["lr"]}], lr=params["lr"])
@@ -65,7 +64,38 @@ def trn_frst_prep(params,trn_X_Y, valid_tst_point_features, label_features, tst_
     head_net.move_to_devices()
     inv_prop = xc_metrics.compute_inv_propesity(trn_X_Y, params['A'], params['B'])
     return head_net, head_train_loader, val_data, head_criterion, head_optimizer,inv_prop
+
+
+
+def test(dir,params,head_net,RUN_TYPE,node_features,valid_tst_point_features,adjecency_lists,NUM_TRN_POINTS,label_remapping,
+             label_features, tst_X_Y_val, tst_X_Y_trn):
+    if RUN_TYPE == "NR":
+        # introduce the tst points into the graph, assume all tst points known
+        # at once. For larger graphs, doing ANNS on trn_points, labels work
+        # equally well.
+        tst_point_nbrs = sample_anns_nbrs(
+            node_features,
+            valid_tst_point_features,
+            params['prediction_introduce_edges'])
+        val_adj_list_trn = [list(x) for x in tst_point_nbrs]
+
+        for i, l in enumerate(val_adj_list_trn):
+            for x in l:
+                adjecency_lists[i + NUM_TRN_POINTS].append(x)
+        new_graph = Graph(
+            node_features,
+            adjecency_lists,
+            params['random_shuffle_nbrs'])
+        head_net.graph = new_graph
+
+    t1 = time.time()
+
+    recall_5 = validate(head_net, params, label_remapping,
+             label_features, valid_tst_point_features, tst_X_Y_val, tst_X_Y_trn, True, 100,dir)
     
+    print("Prediction time Per point(ms): ",
+          ((time.time() - t1) / valid_tst_point_features.shape[0]) * 1000)
+    return recall_5
 
 def train(params,head_net,head_train_loader,head_criterion,head_optimizer,inv_prop,val_data,tst_X_Y_trn):
     
@@ -190,7 +220,7 @@ def prepare_data(data_dict,args):
     tst_point_titles = data_dict["tst_point_titles"]
     label_titles = data_dict["label_titles"]
     
-    if args.run_type == "PR" :
+    if args['run_type'] == "PR" :
 
         val_adj_list_trn, val_adj_list_val, valid_tst_point_features, tst_valid_inds = prepare_test_data_PR(tst_X_Y, tst_point_features)
        
@@ -237,7 +267,7 @@ def prepare_data(data_dict,args):
 
         # training is only over training points, but graph contains half of testing points, labels and all of training points in PR
 
-    elif args.run_type == "NR":
+    elif args['run_type'] == "NR":
         tst_X_Y_val = tst_X_Y
         tst_X_Y_trn = lil_matrix(tst_X_Y_val.shape).tocsr()  # Made an empty csr matrix of the same shape as jds v labels csr
         valid_tst_point_features = tst_point_features  # numpy array copied

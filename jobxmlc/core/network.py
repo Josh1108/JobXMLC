@@ -5,7 +5,7 @@ import torch
 import numpy as np
 import math
 from scipy.sparse import csr_matrix, lil_matrix
-
+from jobxmlc.core.utils import get_device
 import torch.nn as nn
 from torch.nn.parameter import Parameter
 import torch.nn.functional as F
@@ -466,7 +466,7 @@ class Residual(nn.Module):
 class GalaXCBase(nn.Module):
     """Base class for JobXMLC"""
 
-    def __init__(self, num_labels, hidden_dims, device_names,
+    def __init__(self, num_labels, hidden_dims,
                  feature_dim: int,
                  fanouts: list,
                  graph,
@@ -484,8 +484,7 @@ class GalaXCBase(nn.Module):
         self.hidden_dims = hidden_dims
         self.embed_dim = embed_dim
         self.encoder=encoder
-        self.device_names = device_names
-        self.device_name = self.device_names[0]
+        self.device_name = get_device()
         self.device_embeddings = torch.device(self.device_name)
 
         self.dropout = dropout
