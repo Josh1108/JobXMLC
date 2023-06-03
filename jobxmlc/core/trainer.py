@@ -107,7 +107,7 @@ def main():
     params["adjust_lr_epochs"] = np.arange(0, params["num_HN_epochs"], 4) # when to adjust lr
     params["num_epochs"] = params["num_HN_epochs"]
 
-    train(args,params,head_net,head_train_loader,val_data,head_criterion,head_optimizer)
+    train(params,head_net,head_train_loader,head_criterion,head_optimizer,inv_prop,val_data,tst_X_Y_trn)
     params["num_tst"] = tst_X_Y_val.shape[0]
     recall_5 = test(model_dir,args,params,head_net,params['run_type'],node_features,valid_tst_point_features,adjecency_lists,NUM_TRN_POINTS,label_remapping,
             data_dict['label_features'], tst_X_Y_val, tst_X_Y_trn)
