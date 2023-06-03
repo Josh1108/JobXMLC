@@ -9,7 +9,7 @@ So best way is to take input of which hyperparameters to finetune. Add rest to c
 they will come out as a graph.
 '''
 def objective(trial):
-    # Recall@5 
+    # Recall@5 v
     dicti ={}
 
     with open('commandline_args.txt', 'r') as f:
@@ -29,18 +29,18 @@ def objective(trial):
     # dicti['mpt'] = trial.suggest_categorical('mpt',[0,1])#2
     # dicti['restrict_edges_num'] =trial.suggest_int('restrict_edges_num',-1,high=10,step =3)#3 # if -1 not restricted
     # dicti['restrict_edges_head_threshold'] =trial.suggest_int('restrict_edges_head_threshold',-1,1000,step=100) # frequency of edges. No need to change this, let's keep it at 20 for now
-    dicti['num_random_samples'] =trial.suggest_int('num_random_samples',1,20,1) # negative random samples #4
-    # dicti['random_shuffle_nbrs'] =trial.suggest_categorical('random_shuffle_nbrs',[0,1]) # shuffle or not, 0/1 #2
-    dicti['fanouts'] =trial.suggest_categorical('fanouts',["5,5,5","7,7,7"]) #7
-    # dicti['num_HN_shortlist'] = trial.suggest_int('num_HN_shortlist',1,20,step=10) # hard negative shorlist #4
-    dicti['num_HN_shortlist'] = dicti['num_random_samples']
-    # dicti['embedding_type']
-    # dicti['run_type']
-    # dicti['num_validation'] = trial.suggest_int('num_validation',-1,30000,step=10000)#3 # points to be taken for testing
-    # dicti['validation_freq'] = trial.suggest_int('num_validation',-1,30000,step=5000)
-    dicti['num_shortlist'] = trial.suggest_int('num_shortlist',1000,1200,step=100) #5 number of labels to be shortlisted 
-    # dicti['prediction_introduce_edges'] = trial.suggest_int('prediction_introduce_edges',1,7,2) #4
-    dicti['prediction_introduce_edges'] = int(dicti['fanouts'].split(",")[0])
+    # dicti['num_random_samples'] =trial.suggest_int('num_random_samples',1,20,1) # negative random samples #4
+    # # dicti['random_shuffle_nbrs'] =trial.suggest_categorical('random_shuffle_nbrs',[0,1]) # shuffle or not, 0/1 #2
+    # dicti['fanouts'] =trial.suggest_categorical('fanouts',["5,5,5","7,7,7"]) #7
+    # # dicti['num_HN_shortlist'] = trial.suggest_int('num_HN_shortlist',1,20,step=10) # hard negative shorlist #4
+    # dicti['num_HN_shortlist'] = dicti['num_random_samples']
+    # # dicti['embedding_type']
+    # # dicti['run_type']
+    # # dicti['num_validation'] = trial.suggest_int('num_validation',-1,30000,step=10000)#3 # points to be taken for testing
+    # # dicti['validation_freq'] = trial.suggest_int('num_validation',-1,30000,step=5000)
+    # dicti['num_shortlist'] = trial.suggest_int('num_shortlist',1000,1200,step=100) #5 number of labels to be shortlisted 
+    # # dicti['prediction_introduce_edges'] = trial.suggest_int('prediction_introduce_edges',1,7,2) #4
+    # dicti['prediction_introduce_edges'] = int(dicti['fanouts'].split(",")[0])
     # dicti['predict_ova']
     # dicti['A']
     # dicti['B']
