@@ -58,31 +58,20 @@ def create_params_dict(args, node_features, trn_X_Y,
     params.update(dict(hidden_dims=DIM,
                   feature_dim=DIM,
                   embed_dims=DIM,
-                  lr=args.lr,
-                  attention_lr=args.attention_lr
+                  lr=args['lr'],
+                  attention_lr=args['attention_lr']
                   ))
-    params["batch_size"] = args.batch_size
     params["reduction"] = "mean"
     params["batch_div"] = False
-    params["num_epochs"] = args.num_epochs
-    params["num_HN_epochs"] = args.num_HN_epochs
-    params["dlr_factor"] = args.dlr_factor
     params["adjust_lr_epochs"] = set(
-        [int(x) for x in args.adjust_lr.strip().split(",")])
-    params["num_random_samples"] = args.num_random_samples
-    params['encoder'] = args.encoder
-    params["fanouts"] = [int(x.strip()) for x in args.fanouts.strip().split(
+        [int(x) for x in args['adjust_lr'].strip().split(",")])
+    params["fanouts"] = [int(x.strip()) for x in args['fanouts'].strip().split(
         ",") if len(x.strip()) != 0]
     params["num_labels"] = trn_X_Y.shape[1]
     params["graph"] = graph
     params["num_trn"] = NUM_TRN_POINTS
     params["inv_prop"] = xc_metrics.compute_inv_propesity(
-        trn_X_Y, args.A, args.B)
-    params["num_shortlist"] = args.num_shortlist
-    params["num_HN_shortlist"] = args.num_HN_shortlist
-    params["restrict_edges_num"] = args.restrict_edges_num
-    params["restrict_edges_head_threshold"] = args.restrict_edges_head_threshold
-    params["random_shuffle_nbrs"] = args.random_shuffle_nbrs
+        trn_X_Y, args['A'], args['B'])
     return params
 
 

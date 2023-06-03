@@ -33,6 +33,7 @@ def main():
     exp_params = parse_config(args.config_file)
     # make_embeddings(exp_params['encoder'])
     data_dict = data_loader(exp_params['model']['dataset_path'],exp_params['model']['embedding_path'])
+    print(exp_params['model'])
     tst_valid_inds, trn_X_Y, tst_X_Y_trn, tst_X_Y_val, node_features, valid_tst_point_features, label_remapping, adjecency_lists, NUM_TRN_POINTS = prepare_data(data_dict,args=exp_params['model'])
     hard_negs = [[] for i in range(node_features.shape[0])]
     TST_TAKE = exp_params['model']['num_validation']

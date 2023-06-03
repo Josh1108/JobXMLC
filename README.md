@@ -13,6 +13,10 @@ Add these to your bashrc file:
 `export PYTHONPATH=/home/jsk/skill-prediction/jobxlmc:$PYTHONPATH`
 `export JOBXMLC_DATA=/home/jsk/skill-prediction/data`
 
+Create Environment:
+
+Using `requirements.txt` install environment
+
 ## Dataset
 The dataset should be present in `dataset/`, e.g. the stackoverflow dataset is present as `dataset/stackoverflow` with the following files:
 1. trn_X_Y.txt: dataset in csr format

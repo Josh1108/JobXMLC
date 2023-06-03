@@ -32,7 +32,7 @@ def data_loader(dataset_path,embedding_path):
 
 
 def trn_frst_prep(params,trn_X_Y, valid_tst_point_features, label_features, tst_X_Y_val, TST_TAKE, hard_negs):
-    head_net = GalaXCBase(params["num_labels"], params["hidden_dims"], params["feature_dim"], params["fanouts"], params["graph"], params["embed_dims"],params.encoder)
+    head_net = GalaXCBase(params["num_labels"], params["hidden_dims"], params['device_names'], params["feature_dim"], params["fanouts"], params["graph"], params["embed_dims"],params['encoder'])
 
     head_optimizer = torch.optim.Adam([{'params': [head_net.classifier.classifiers[0].attention_weights], 'lr': params["attention_lr"]},
                                       {"params": [param for name, param in head_net.named_parameters() if name != "classifier.classifiers.0.attention_weights"], "lr": params["lr"]}], lr=params["lr"])
@@ -309,23 +309,23 @@ def prepare_data(data_dict,args):
         NUM_TRN_POINTS = trn_point_features.shape[0] # Size of training data
     
 
-    if args.restrict_edges_num >= 3: # if number of neighbours are restricted take frequent labels (args.restrict_edges_head_threshold) in dataset and change adjecency lists to reflect
+    if args['restrict_edges_num'] >= 3: # if number of neighbours are restricted take frequent labels (args.restrict_edges_head_threshold) in dataset and change adjecency lists to reflect
                                       # the neighbour pruning.
 
-        head_labels = np.where(np.sum(trn_X_Y.astype(np.bool),axis=0)>args.restrict_edges_head_threshold)[1]
+        head_labels = np.where(np.sum(trn_X_Y.astype(np.bool),axis=0)>args['restrict_edges_head_threshold'])[1]
 
         for lbl in head_labels:
             if lbl!=0:
                 continue
             _nid = label_remapping[lbl]
             distances = distance.cdist([node_features[_nid]], [node_features[x] for x in adjecency_lists[_nid]], "cosine")[0]
-            if args.take_most_frequent_labels:
+            if args['take_most_frequent_labels']:
                 sorted_indices = np.argsort(-distances)
             else:
                 sorted_indices = np.argsort(-distances)
 
             new_nbrs = []
-            for k in range(min(args.restrict_edges_num, len(sorted_indices))):
+            for k in range(min(args['restrict_edges_num'], len(sorted_indices))):
                 new_nbrs.append(adjecency_lists[_nid][sorted_indices[k]])
             adjecency_lists[_nid] = new_nbrs
 

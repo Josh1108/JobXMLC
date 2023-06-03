@@ -9,10 +9,6 @@ import torch.nn.functional as F
 import torch.utils.data
 import logging
 
-def get_device():
-    if torch.cuda.is_available():
-        return "cuda:0"
-    return "cpu"
 
 class MeanAggregator(nn.Module):
     """Aggregates a node's embeddings using mean of neighbors' embeddings."""
@@ -467,7 +463,7 @@ class Residual(nn.Module):
 class GalaXCBase(nn.Module):
     """Base class for JobXMLC"""
 
-    def __init__(self, num_labels, hidden_dims,
+    def __init__(self, num_labels, hidden_dims, device_names,
                  feature_dim: int,
                  fanouts: list,
                  graph,
@@ -485,7 +481,8 @@ class GalaXCBase(nn.Module):
         self.hidden_dims = hidden_dims
         self.embed_dim = embed_dim
         self.encoder=encoder
-        self.device_name = get_device()
+        self.device_names = device_names
+        self.device_name = self.device_names[0]
         self.device_embeddings = torch.device(self.device_name)
 
         self.dropout = dropout
