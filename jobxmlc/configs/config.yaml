@@ -10,8 +10,11 @@ encoder:
     params:
       number_of_words: 10
 model:
-  dataset_path:
-  save_model: 0
+  run_name: testing
+  dataset_path: !ENV ${JOBXMLC_DATA_DIR}/COLING
+  embedding_path: !ENV ${JOBXMLC_DATA_DIR}/embeddings
+  model_path: !ENV ${JOBXMLC_DATA_DIR}/models
+  save_model: True
   encoder: GIN
   num_epochs: 30
   num_HN_epochs: 20
@@ -21,6 +24,7 @@ model:
   adjust_lr: 20,22,26
   dlr_factor: 0.5
   mpt: 0
+  device_names: [0]
   restrict_edges_num: -1
   restrict_edges_head_threshold: 3
   num_random_samples: 4
@@ -36,9 +40,4 @@ model:
   predict_ova: 0
   A: 0.6
   B: 2.6
-  name: New-FT-stack-jobs-all-no_sorting
-  reporting:
-  # console:
-  #   module: baseline.reporting
-  # wandb:
-  #   module: eptests.core.reporting_wandb
+  

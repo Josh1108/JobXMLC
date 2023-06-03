@@ -85,8 +85,6 @@ def create_validation_data(valid_tst_point_features, label_features, tst_X_Y_val
         TST_TAKE = valid_tst_point_features.shape[0]
 
     if params['validation_freq'] != -1 and params['predict_ova'] == 0 :
-        print("Creating shortlists for validation using base embeddings...")
-        t1 = time.time()
 
         NGS = HNSW(
             M=100,
@@ -97,14 +95,10 @@ def create_validation_data(valid_tst_point_features, label_features, tst_X_Y_val
 
         prediction_shortlist, _ = NGS.predict(
             valid_tst_point_features[:TST_TAKE], params["num_shortlist"])
-        print("prediction_shortlist.shape", prediction_shortlist.shape)
-        print("Time taken in creating shortlists per point(ms)",
-              ((time.time() - t1) / prediction_shortlist.shape[0]) * 1000)
 
     if params['validation_freq'] != -1:
         _start = params["num_trn"]
         _end = _start + TST_TAKE
-        print("_start, _end = ", _start, _end)
 
         if params['predict_ova'] == 0 :
             val_dataset = DatasetGraphPrediction(

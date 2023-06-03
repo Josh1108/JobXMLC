@@ -417,7 +417,6 @@ class LinearDistributed(nn.Module):
                 return total_x
 
     def move_to_devices(self):
-        print("Moving to different devices...")
         for i in range(len(self.device_embeddings)):
             self.classifiers[i].move_to_devices()
 
@@ -455,7 +454,6 @@ class Residual(nn.Module):
                 gain=nn.init.calculate_gain('relu'))
             nn.init.constant_(self.hidden_layer[0].bias, 0.0)
         else:
-            print("Using eye to initialize!")
             nn.init.eye_(self.hidden_layer[0].weight)
             nn.init.constant_(self.hidden_layer[0].bias, 0.0)
 
