@@ -1,9 +1,0 @@
-name: galaxc
-channels:
-  - defaults
-dependencies:
-  - python=3.6.9
-  - anaconda
-  - pip
-  - pip:
-    - -r file:requirements.txt
