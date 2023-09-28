@@ -24,3 +24,18 @@ The dataset should be present in `dataset/`, e.g. the stackoverflow dataset is p
 3. trn_X.txt: job description for each data point
 4. tst_X.txt: job description for each data point
 5. Y.txt: labels, one in each row
+
+
+# JobXMLC
+## [JobXMLC: EXtreme Multi-Label Classification of Job Skills with Graph Neural Networks](https://aclanthology.org/2023.findings-eacl.163/)
+```bib
+@inproceedings{goyal-etal-2023-jobxmlc,
+    title = JobXMLC: EXtreme Multi-Label Classification of Job Skills with Graph Neural Networks,
+    author = Goyal, Nidhi  and Kalra, Jushaan et al.
+    booktitle = "Findings of the Association for Computational Linguistics: EACL 2023",
+    month = may,
+    year = "2023",
+    publisher = "Association for Computational Linguistics",
+}
+
+```
